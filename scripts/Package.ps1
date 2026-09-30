@@ -8,6 +8,8 @@ if ($petVersion -notmatch '^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0
 $petHost = [Uri]([string]$petSettings.host)
 if ($petHost.Scheme -ne 'https' -or $petHost.AbsolutePath -ne '/' -or -not [string]::IsNullOrEmpty($petHost.UserInfo) -or -not [string]::IsNullOrEmpty($petHost.Query) -or -not [string]::IsNullOrEmpty($petHost.Fragment)) { throw '更新主机必须是没有凭证、路径和参数的 HTTPS 域名。' }
 if ([string]$petSettings.projectPath -notmatch '^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$' -or [string]$petSettings.packageName -notmatch '^[A-Za-z0-9_.-]+$' -or [string]$petSettings.channel -notmatch '^[A-Za-z0-9_.-]+$') { throw '更新仓库路径、包名或频道格式错误。' }
+$petProjectId = 0L
+if (-not [long]::TryParse([string]$petSettings.projectId, [ref]$petProjectId) -or $petProjectId -le 0) { throw 'update-settings.json 需要正整数 projectId。' }
 if ([string]$petSettings.host -ne 'https://jihulab.com' -or [string]$petSettings.packageName -ne 'nezha-desktop-pet' -or [string]$petSettings.channel -ne 'latest') { throw '当前更新程序要求极狐 GitLab 的 nezha-desktop-pet / latest 发布通道。' }
 $petRuntime = Join-Path $petProjectRoot ('dist\nezha-desktop-v' + $petVersion)
 if (-not $SkipBuild) { & (Join-Path $petProjectRoot 'build.ps1') -OutputDirectory $petRuntime }
@@ -28,7 +30,7 @@ $petZip = Join-Path $petRelease $petFileName
 if (Test-Path -LiteralPath $petZip) { Remove-Item -LiteralPath $petZip -Force }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 [IO.Compression.ZipFile]::CreateFromDirectory($petRuntime, $petZip, [IO.Compression.CompressionLevel]::Optimal, $false)
-$petPackageBase = $petHost.AbsoluteUri.TrimEnd('/') + '/api/v4/projects/' + [Uri]::EscapeDataString([string]$petSettings.projectPath) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
+$petPackageBase = $petHost.AbsoluteUri.TrimEnd('/') + '/api/v4/projects/' + $petProjectId.ToString([Globalization.CultureInfo]::InvariantCulture) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
 $petManifest = [ordered]@{
     version = $petVersion
     packageUrl = $petPackageBase + '/' + $petVersion + '/' + $petFileName

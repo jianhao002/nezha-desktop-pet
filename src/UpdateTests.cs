@@ -21,7 +21,7 @@ namespace NezhaDesktop
                 try { body(); results.Add("PASS " + name); }
                 catch (Exception ex) { failures++; results.Add("FAIL " + name + ": " + ex.Message); }
             };
-            UpdateSettings settings = new UpdateSettings { Host = "https://jihulab.com", ProjectPath = "personal-fixture/nezha-desktop-pet", PackageName = "nezha-desktop-pet", Channel = "latest" };
+            UpdateSettings settings = new UpdateSettings { Host = "https://jihulab.com", ProjectId = 375689, ProjectPath = "personal-fixture/nezha-desktop-pet", PackageName = "nezha-desktop-pet", Channel = "latest" };
 
             test("strict-version-and-numeric-order", delegate {
                 Check(UpdateSafety.ParseVersion("0.10.0") > UpdateSafety.ParseVersion("0.9.9"), "版本必须按数字比较");
@@ -52,10 +52,18 @@ namespace NezhaDesktop
                 }
             });
             test("settings-reject-another-host-or-project-traversal", delegate {
-                new UpdateSettings { Host = settings.Host, ProjectPath = settings.ProjectPath, PackageName = settings.PackageName, Channel = settings.Channel }.Validate();
-                Reject(delegate { new UpdateSettings { Host = "https://company.example", ProjectPath = settings.ProjectPath, PackageName = settings.PackageName, Channel = settings.Channel }.Validate(); }, "接受了其他主机");
+                new UpdateSettings { Host = settings.Host, ProjectId = settings.ProjectId, ProjectPath = settings.ProjectPath, PackageName = settings.PackageName, Channel = settings.Channel }.Validate();
+                Reject(delegate { new UpdateSettings { Host = "https://company.example", ProjectId = settings.ProjectId, ProjectPath = settings.ProjectPath, PackageName = settings.PackageName, Channel = settings.Channel }.Validate(); }, "接受了其他主机");
                 foreach (string path in new[] { "../pet", "personal/../pet", "personal/pet.", "personal//pet", "personal/pet?token=x" })
-                    Reject(delegate { new UpdateSettings { Host = settings.Host, ProjectPath = path, PackageName = settings.PackageName, Channel = settings.Channel }.Validate(); }, "接受了非法项目路径");
+                    Reject(delegate { new UpdateSettings { Host = settings.Host, ProjectId = settings.ProjectId, ProjectPath = path, PackageName = settings.PackageName, Channel = settings.Channel }.Validate(); }, "接受了非法项目路径");
+            });
+            test("update-uri-uses-positive-numeric-project-id", delegate {
+                Check(settings.GenericBaseUrl == "https://jihulab.com/api/v4/projects/375689/packages/generic/nezha-desktop-pet/", "更新地址未使用项目编号");
+                Check(settings.ManifestUri.AbsoluteUri.Contains("/projects/375689/"), ".NET Uri 改变了项目编号路径");
+                Check(!settings.ManifestUri.AbsoluteUri.Contains("%2F") && !settings.ManifestUri.AbsoluteUri.Contains(settings.ProjectPath), "更新地址仍依赖转义斜杠项目路径");
+                Check(settings.PackageUri("0.4.0").AbsoluteUri == "https://jihulab.com/api/v4/projects/375689/packages/generic/nezha-desktop-pet/0.4.0/nezha-desktop-pet-0.4.0.zip", "正式版本包地址错误");
+                foreach (int invalid in new[] { 0, -1 })
+                    Reject(delegate { new UpdateSettings { Host = settings.Host, ProjectId = invalid, ProjectPath = settings.ProjectPath, PackageName = settings.PackageName, Channel = settings.Channel }.Validate(); }, "接受了无效项目编号");
             });
             test("zip-valid-package-extracts-in-chinese-space-directory", delegate {
                 string folder = Folder(output, "正常发布 中文目录");
@@ -151,7 +159,7 @@ namespace NezhaDesktop
             test("local-preparation-rejects-changing-the-update-repository", delegate {
                 string install = Folder(output, "changed-repository");
                 File.WriteAllText(Path.Combine(install, "update-settings.json"), UpdateSafety.WriteJson(settings));
-                UpdateSettings changed = new UpdateSettings { Host = settings.Host, ProjectPath = "other-person/another-project", PackageName = settings.PackageName, Channel = settings.Channel };
+                UpdateSettings changed = new UpdateSettings { Host = settings.Host, ProjectId = 376000, ProjectPath = "other-person/another-project", PackageName = settings.PackageName, Channel = settings.Channel };
                 string archive = MakeArchive(install, "redirect-source.zip", PackageEntries(changed, "0.4.0"));
                 UpdateCheck check = new UpdateCheck { CurrentVersion = "0.3.0", LatestVersion = "0.4.0", Available = true,
                     Manifest = Manifest(settings, "0.4.0", UpdateSafety.FileHash(archive), new FileInfo(archive).Length) };

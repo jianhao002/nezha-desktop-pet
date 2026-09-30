@@ -24,7 +24,7 @@ Set-Location -LiteralPath 'C:\Users\qian_\Documents\Codex\projects\nezha-desktop
 ## 改动、编译、验证
 
 1. 修改源码或动作素材。新增食物、工作先看 `config.json`；已有物品 ID 不要随意改名，否则存档中的库存找不到对应物品。
-2. 修改 `config.json` 的 `version`，例如由 `0.3.0` 改为 `0.3.1`。版本用三段数字，更新只安装更高版本。
+2. 修改 `config.json` 的 `version`，例如由 `0.3.1` 改为 `0.3.2`。版本用三段数字，更新只安装更高版本。
 3. 编译：
 
 ```powershell

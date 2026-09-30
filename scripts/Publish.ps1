@@ -7,6 +7,8 @@ $petVersion = [string]$petConfig.version
 if ($petVersion -notmatch '^(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})\.(0|[1-9][0-9]{0,5})$') { throw '版本必须使用三段数字，不允许前导零。' }
 if ([string]$petSettings.host -ne 'https://jihulab.com') { throw '本发布脚本只向已配置的个人极狐 GitLab 主机发送凭证。' }
 if ([string]$petSettings.projectPath -notmatch '^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$' -or [string]$petSettings.packageName -notmatch '^[A-Za-z0-9_.-]+$' -or [string]$petSettings.channel -notmatch '^[A-Za-z0-9_.-]+$') { throw '更新设置格式错误。' }
+$petProjectId = 0L
+if (-not [long]::TryParse([string]$petSettings.projectId, [ref]$petProjectId) -or $petProjectId -le 0) { throw 'update-settings.json 需要正整数 projectId。' }
 if ([string]$petSettings.packageName -ne 'nezha-desktop-pet' -or [string]$petSettings.channel -ne 'latest') { throw '更新程序只接受 nezha-desktop-pet / latest 发布通道。' }
 if ([string]::IsNullOrWhiteSpace($ReleaseDirectory)) { $ReleaseDirectory = Join-Path $petProjectRoot ('dist\release-' + $petVersion) }
 $petRelease = [IO.Path]::GetFullPath($ReleaseDirectory)
@@ -14,7 +16,7 @@ $petManifestPath = Join-Path $petRelease 'update.json'
 $petManifest = Get-Content -LiteralPath $petManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
 $petPackageName = [string]$petSettings.packageName + '-' + $petVersion + '.zip'
 $petPackagePath = Join-Path $petRelease $petPackageName
-$petBase = 'https://jihulab.com/api/v4/projects/' + [Uri]::EscapeDataString([string]$petSettings.projectPath) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
+$petBase = 'https://jihulab.com/api/v4/projects/' + $petProjectId.ToString([Globalization.CultureInfo]::InvariantCulture) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
 $petPackageUrl = $petBase + '/' + $petVersion + '/' + $petPackageName
 $petLatestUrl = $petBase + '/' + [Uri]::EscapeDataString([string]$petSettings.channel) + '/update.json'
 if ($petManifest.version -ne $petVersion -or $petManifest.packageUrl -ne $petPackageUrl) { throw '发布包与当前版本、仓库设置不一致，请重新运行 Package.ps1。' }

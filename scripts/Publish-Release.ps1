@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $petSettings = Get-Content -LiteralPath (Join-Path $petProjectRoot 'update-settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-if ([string]$petSettings.host -ne 'https://jihulab.com' -or [string]$petSettings.projectPath -ne 'hddhhyhy/nezha-desktop-pet') { throw '仓库设置与已确认的个人仓库不一致。' }
+if ([string]$petSettings.host -ne 'https://jihulab.com' -or [string]$petSettings.projectPath -ne 'hddhhyhy/nezha-desktop-pet' -or [string]$petSettings.projectId -ne '375689') { throw '仓库设置与已确认的个人仓库不一致。' }
 $petGit = (Get-Command git -ErrorAction Stop).Source
 $petStatus = @(& $petGit -C $petProjectRoot status --porcelain)
 if ($LASTEXITCODE -ne 0) { throw '无法读取本地 Git 仓库。' }

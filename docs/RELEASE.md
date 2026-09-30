@@ -26,7 +26,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Publish-Release.ps
 
 ```text
 源码 main 分支推送完成。
-发布并匿名下载校验通过：v0.3.0
+发布并匿名下载校验通过：v0.3.1
 源码与发布包均已上传。
 ```
 
@@ -34,13 +34,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Publish-Release.ps
 
 ## 后续发新版
 
-1. 在开发目录修改源码/素材与 `config.json`，把 `version` 提升为 `0.3.1` 等新版本。
+1. 在开发目录修改源码/素材与 `config.json`，把 `version` 提升为 `0.3.2` 等新版本。
 2. 提交到本机 Git：
 
 ```powershell
 git status
 git add .
-git commit -m "Release v0.3.1"
+git commit -m "Release v0.3.2"
 ```
 
 3. 运行同一个 `Publish-Release.ps1`。脚本要求源码已提交、当前分支为 `main`、origin 为个人仓库，防止把凭证发到错误仓库。
@@ -58,15 +58,17 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Publish-Release.ps
 
 ```text
 dist/
-  nezha-desktop-v0.3.0/       可运行文件
-  release-0.3.0/
-    nezha-desktop-pet-0.3.0.zip
+  nezha-desktop-v0.3.1/       可运行文件
+  release-0.3.1/
+    nezha-desktop-pet-0.3.1.zip
     update.json
 ```
 
 zip 根目录直接包含 exe、配置、README 和 `assets`，没有外层版本文件夹。发布包不含源码、测试存档、真实存档、凭证或构建工具。
 
 清单字段的含义：
+
+`update-settings.json` 同时保留个人仓库路径与数字项目 ID `375689`。浏览器和 Git 使用仓库路径；更新 API 使用数字 ID，避免 Windows .NET Framework 将路径中的编码斜杠重新解释。这个 ID 是公开仓库编号，不是凭证。
 
 | 字段 | 含义 |
 | --- | --- |
@@ -86,7 +88,7 @@ GitLab generic package 默认允许重复上传同名文件，下载最近上传
 - 找不到清单 / HTTP 404：维护者尚未发布程序包与 latest 清单；仅上传源码不够。
 - HTTP 401 / 403：发布凭证权限或有效期不足，或仓库 Package Registry 未允许公开下载。
 - 同版本内容不同：提升版本，重新提交源码与打包，不能覆盖已经发布的版本。
-- 更新下载失败：程序和存档仍保留，恢复网络后重试。首次从 0.1 / 0.2 升级需手工解压 0.3 并复制 `data`。
+- 更新下载失败：程序和存档仍保留，恢复网络后重试。首次从 0.1 / 0.2 升级需手工解压 0.3.1 并复制 `data`；试用过 0.3.0 的电脑也先手工换到 0.3.1。
 - 安装失败：更新助手尝试恢复旧程序，诊断和备份保留在运行目录的 `.update`。恢复失败时保留整个目录再排查；不要先删除 `data` 或备份。
 - 新程序测试通过但实际重启失败：查看暂存目录的状态与错误文件，保留完整目录。目标电脑的权限、杀毒软件与系统环境仍需实际验收。
 

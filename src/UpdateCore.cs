@@ -16,6 +16,7 @@ namespace NezhaDesktop
     public sealed class UpdateSettings
     {
         public string Host { get; set; }
+        public int ProjectId { get; set; }
         public string ProjectPath { get; set; }
         public string PackageName { get; set; }
         public string Channel { get; set; }
@@ -34,6 +35,7 @@ namespace NezhaDesktop
         {
             if (!String.Equals(Host, "https://jihulab.com", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("更新源必须是 https://jihulab.com。");
+            if (ProjectId <= 0) throw new InvalidDataException("更新项目编号无效，请下载完整新版发布包。");
             if (String.IsNullOrWhiteSpace(ProjectPath) || ProjectPath.Length > 200 ||
                 !Regex.IsMatch(ProjectPath, @"^[A-Za-z0-9_-][A-Za-z0-9_.-]*(/[A-Za-z0-9_-][A-Za-z0-9_.-]*)+$"))
                 throw new InvalidDataException("更新项目路径无效。");
@@ -44,7 +46,7 @@ namespace NezhaDesktop
         }
         public string GenericBaseUrl
         {
-            get { Validate(); return Host.ToLowerInvariant() + "/api/v4/projects/" + Uri.EscapeDataString(ProjectPath) + "/packages/generic/" + PackageName + "/"; }
+            get { Validate(); return Host.ToLowerInvariant() + "/api/v4/projects/" + ProjectId.ToString(CultureInfo.InvariantCulture) + "/packages/generic/" + PackageName + "/"; }
         }
         public Uri ManifestUri { get { return new Uri(GenericBaseUrl + Channel + "/update.json"); } }
         public Uri PackageUri(string version)
@@ -156,7 +158,7 @@ namespace NezhaDesktop
             string payload = Path.Combine(stage, "payload");
             UpdateSafety.ExtractPackage(archive, payload, update.Manifest.Version);
             UpdateSettings nextSettings = UpdateSettings.Load(payload);
-            if (nextSettings.Host != settings.Host || nextSettings.ProjectPath != settings.ProjectPath ||
+            if (nextSettings.Host != settings.Host || nextSettings.ProjectId != settings.ProjectId || nextSettings.ProjectPath != settings.ProjectPath ||
                 nextSettings.PackageName != settings.PackageName || nextSettings.Channel != settings.Channel)
                 throw new InvalidDataException("发布包试图改变更新仓库，已拒绝安装。");
             Report(progress, 100, "新版已校验，将保存进度并重启。");
