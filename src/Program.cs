@@ -36,10 +36,22 @@ namespace NezhaDesktop
                 {
                     string command = args[0];
                     bool reports = command == "--self-test" || command == "--preview" || command == "--native-smoke" || command == "--food-preview" || command == "--actions-preview" || command == "--update-test" || command == "--update-online-test";
-                    if (reports && args.Length == 2) reportDirectory = Path.GetFullPath(args[1]);
+                    if (command == "--package-check" && args.Length == 3) reportDirectory = Path.GetFullPath(args[2]);
+                    else if (reports && args.Length == 2) reportDirectory = Path.GetFullPath(args[1]);
                     else if (command != "--update-health" || args.Length != 2) throw new ArgumentException("启动参数无效。");
                 }
                 PetConfig config = PetConfig.Load(root);
+                if (args.Length > 0 && args[0] == "--package-check")
+                {
+                    if (Directory.Exists(reportDirectory)) throw new IOException("压缩包验收目录必须是新目录。");
+                    Directory.CreateDirectory(reportDirectory);
+                    string archive = Path.GetFullPath(args[1]);
+                    UpdateSafety.ExtractPackage(archive, Path.Combine(reportDirectory, "payload"), config.Version);
+                    File.WriteAllText(Path.Combine(reportDirectory, "package-check.txt"),
+                        "PASS actual-release-archive-update-validation\nversion=" + config.Version
+                        + "\nsha256=" + UpdateSafety.FileHash(archive));
+                    return 0;
+                }
                 if (args.Length > 0 && args[0] == "--update-online-test")
                 {
                     Directory.CreateDirectory(reportDirectory);

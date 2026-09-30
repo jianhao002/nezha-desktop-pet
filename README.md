@@ -1,10 +1,12 @@
-# 焰轮哪吒 · Windows 离线桌宠 0.4.0
+# 焰轮哪吒 · Windows 离线桌宠 0.4.1
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
 
 个人公开仓库：[hddhhyhy/nezha-desktop-pet](https://jihulab.com/hddhhyhy/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE.md)。
 
 0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/ROADMAP.md)。
+
+请使用 0.4.1：它修复了不同 Windows PowerShell / .NET 版本生成 ZIP 路径分隔符不一致的问题。0.4.0 的更新包会被桌宠校验拒绝；0.4.1 使用标准 ZIP 路径，并在上传前用真实更新代码检查最终压缩包。功能与存档规则沿用 0.4.0。
 
 ## 开发目录与运行目录
 
@@ -93,14 +95,14 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 
 `data/save.json` 保存金币、背包、打工与午睡记录、属性、大小与位置，`data/save.json.bak` 是上一次有效存档备份。首次启动时自动生成 `data`。存档有备份恢复能力，但恢复后最后一次操作可能回退；两个文件都损坏时会报错，不会悄悄重置。
 
-### 已有 0.3.1 更新到 0.4.0
+### 已有 0.3.1 更新到 0.4.1
 
-在更新菜单检查已经发布的新版，安装前会保存当前进度。0.4.0 新增午睡记录，存档格式升级到 3；格式 1 / 2 自动迁移，保留金币、背包、累计经验和已接工作。升级后的存档不能交给 0.3.1 及更早程序使用，回退时使用保留的旧版目录和它原来的存档。
+在更新菜单检查已经发布的新版，安装前会保存当前进度。0.4.1 含午睡记录，存档格式为 3；格式 1 / 2 自动迁移，保留金币、背包、累计经验和已接工作。升级后的存档不能交给 0.3.1 及更早程序使用，回退时使用保留的旧版目录和它原来的存档。
 
 ### 0.1 / 0.2 第一次手工升级
 
 1. 退出旧版桌宠。
-2. 将 0.4.0 完整发布包解压到一个新目录，确认同时包含 `NezhaPet.exe`、`NezhaUpdater.exe`、`assets`、`config.json` 和 `update-settings.json`。
+2. 将 0.4.1 完整发布包解压到一个新目录，确认同时包含 `NezhaPet.exe`、`NezhaUpdater.exe`、`assets`、`config.json` 和 `update-settings.json`。
 3. 在首次启动前，把旧版整个 `data` 文件夹复制到新版程序目录。
 4. 双击新版 exe。格式 1 / 2 存档会自动升级到格式 3，保留金币、背包、累计经验和进行中的工作，并补发尚未领取的成长礼。
 5. 以后在更新菜单安装已经发布的新版。0.1 / 0.2 程序没有更新功能，第一次升级需要按上述方式复制。

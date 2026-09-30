@@ -29,7 +29,27 @@ $petFileName = [string]$petSettings.packageName + '-' + $petVersion + '.zip'
 $petZip = Join-Path $petRelease $petFileName
 if (Test-Path -LiteralPath $petZip) { Remove-Item -LiteralPath $petZip -Force }
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[IO.Compression.ZipFile]::CreateFromDirectory($petRuntime, $petZip, [IO.Compression.CompressionLevel]::Optimal, $false)
+Add-Type -AssemblyName System.IO.Compression
+# Framework versions differ in their default entry separators. ZIP paths are
+# always forward slashes so existing desktop updaters accept the exact artifact.
+$petArchive = [IO.Compression.ZipFile]::Open($petZip, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($petFile in ($petRuntimeFiles | Where-Object { -not $_.PSIsContainer } | Sort-Object FullName)) {
+        $petEntryName = $petFile.FullName.Substring($petRuntime.Length + 1).Replace('\', '/')
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($petArchive, $petFile.FullName, $petEntryName, [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    }
+}
+finally { $petArchive.Dispose() }
+
+# Validate the real output ZIP through the same code used by the update button.
+$petArchiveReport = Join-Path $petProjectRoot ('qa\release-archive-' + $petVersion + '-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+if ($petZip.Contains('"') -or $petArchiveReport.Contains('"')) { throw '发布验收路径不能含双引号。' }
+$petArchiveArgs = '--package-check "' + $petZip + '" "' + $petArchiveReport + '"'
+$petArchiveProcess = Start-Process -FilePath (Join-Path $petRuntime 'NezhaPet.exe') -ArgumentList $petArchiveArgs -WorkingDirectory $petRuntime -WindowStyle Hidden -PassThru
+if (-not $petArchiveProcess.WaitForExit(60000)) { $petArchiveProcess.Kill(); throw '正式压缩包校验超时，停止发布。' }
+$petArchiveProcess.Refresh()
+if ($petArchiveProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $petArchiveReport 'package-check.txt'))) { throw ('正式压缩包未通过桌宠更新校验；报告 ' + $petArchiveReport) }
+Write-Output ('PASS actual-release-archive → ' + $petArchiveReport)
 $petPackageBase = $petHost.AbsoluteUri.TrimEnd('/') + '/api/v4/projects/' + $petProjectId.ToString([Globalization.CultureInfo]::InvariantCulture) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
 $petManifest = [ordered]@{
     version = $petVersion
