@@ -79,8 +79,8 @@ function Send-PetPackageFile([string]$Url, [string]$Path) {
         $petRequest = [Net.HttpWebRequest]::Create($Url)
         $petRequest.Method = 'PUT'
         $petRequest.AllowAutoRedirect = $false
-        $petRequest.Timeout = 30000
-        $petRequest.ReadWriteTimeout = 120000
+        $petRequest.Timeout = 180000
+        $petRequest.ReadWriteTimeout = 180000
         $petRequest.ContentType = 'application/octet-stream'
         $petRequest.ContentLength = (Get-Item -LiteralPath $Path).Length
         $petRequest.Headers['PRIVATE-TOKEN'] = $petToken
@@ -98,10 +98,11 @@ function Send-PetPackageFile([string]$Url, [string]$Path) {
             $petFailureResponse.Close()
             throw ('上传失败，HTTP ' + $petStatus + '。请检查个人凭证的 api 权限、有效期和项目权限。')
         }
-        throw '上传失败。请检查网络；重新执行会先验证已经上传的版本包。'
+        throw ('上传失败，连接状态 ' + $_.Exception.Status + '。请检查网络；重新执行会先验证已经上传的版本包。')
     }
     finally {
-        if ($null -ne $petOutput) { $petOutput.Dispose() }
+        # Closing an aborted upload stream can fail again; preserve the original error.
+        if ($null -ne $petOutput) { try { $petOutput.Dispose() } catch {} }
         if ($null -ne $petInput) { $petInput.Dispose() }
         if ($null -ne $petResponse) { $petResponse.Close() }
     }
