@@ -1,0 +1,27 @@
+# Build, package, and verification output
+/dist/
+/qa/
+/work/
+/artifacts/
+*.zip
+*.pdb
+*.log
+*.tmp
+
+# Per-computer game progress and update staging
+data/
+.update/
+.updates/
+update.local.json
+update-status.json
+credentials.json
+
+# Local secrets and editor state
+.env
+.env.*
+*.token
+*.secret
+.vs/
+.vscode/
+Thumbs.db
+Desktop.ini

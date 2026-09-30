@@ -1,0 +1,50 @@
+{
+  "name": "焰轮哪吒",
+  "version": "0.3.0",
+  "frameWidth": 192,
+  "frameHeight": 208,
+  "defaultSize": 260,
+  "animations": {
+    "idle": { "sheet": "assets/nezha.png", "row": 0, "frames": [0,1,2,3,4,5], "frameMs": 150 },
+    "runRight": { "sheet": "assets/nezha.png", "row": 1, "frames": [0,1,2,3,4,5,6,7], "frameMs": 110 },
+    "runLeft": { "sheet": "assets/nezha.png", "row": 2, "frames": [0,1,2,3,4,5,6,7], "frameMs": 110 },
+    "wave": { "sheet": "assets/nezha.png", "row": 3, "frames": [0,1,2,3], "frameMs": 160 },
+    "jump": { "sheet": "assets/nezha.png", "row": 4, "frames": [0,1,2,3,4], "frameMs": 120 },
+    "upset": { "sheet": "assets/nezha.png", "row": 5, "frames": [0,1,2,3,4,5,6,7], "frameMs": 160 },
+    "wait": { "sheet": "assets/nezha.png", "row": 6, "frames": [0,1,2,3,4,5], "frameMs": 180 },
+    "busy": { "sheet": "assets/nezha.png", "row": 7, "frames": [0,1,2,3,4,5], "frameMs": 130 },
+    "review": { "sheet": "assets/nezha.png", "row": 8, "frames": [0,1,2,3,4,5], "frameMs": 150 },
+    "eatCandy": { "files": ["assets/eat-candy/00.png", "assets/eat-candy/01.png", "assets/eat-candy/02.png", "assets/eat-candy/03.png", "assets/eat-candy/04.png", "assets/eat-candy/05.png"], "frameMs": 220, "durationMs": 1650, "loop": false },
+    "eatBun": { "files": ["assets/eat-bun/00.png", "assets/eat-bun/01.png", "assets/eat-bun/02.png", "assets/eat-bun/03.png", "assets/eat-bun/04.png", "assets/eat-bun/05.png"], "frameMs": 240, "durationMs": 1750, "loop": false },
+    "eatPeach": { "files": ["assets/eat-peach/00.png", "assets/eat-peach/01.png", "assets/eat-peach/02.png", "assets/eat-peach/03.png", "assets/eat-peach/04.png", "assets/eat-peach/05.png"], "frameMs": 240, "durationMs": 1800, "loop": false }
+  },
+  "interactions": [
+    { "id": "head", "name": "头部", "x": 0.34, "y": 0.17, "width": 0.34, "height": 0.24, "animation": "wave", "message": "嘿！今天也要元气满满。", "mood": 1 },
+    { "id": "leftHand", "name": "左手", "x": 0.25, "y": 0.39, "width": 0.16, "height": 0.22, "animation": "review", "message": "看我舞动红绫！", "mood": 1 },
+    { "id": "rightHand", "name": "右手", "x": 0.63, "y": 0.39, "width": 0.15, "height": 0.23, "animation": "review", "message": "法宝准备好了！", "mood": 1 },
+    { "id": "body", "name": "身体", "x": 0.39, "y": 0.41, "width": 0.25, "height": 0.27, "animation": "jump", "message": "有点痒，哈哈！", "mood": 1 },
+    { "id": "wheels", "name": "风火轮", "x": 0.23, "y": 0.70, "width": 0.55, "height": 0.29, "animation": "runRight", "message": "风火轮，出发！", "mood": 1 },
+    { "id": "halo", "name": "神环", "x": 0.26, "y": 0.01, "width": 0.49, "height": 0.37, "animation": "idle", "message": "神光护佑，诸事顺遂。", "mood": 1 }
+  ],
+  "foods": [
+    { "id": "candy", "name": "桂花糖", "description": "轻轻尝一口，甜得眯起眼。", "price": 8, "satiety": 12, "energy": 0, "mood": 8, "animation": "eatCandy", "minimumLevel": 1, "experience": 4 },
+    { "id": "bun", "name": "莲蓉包", "description": "双手抱着吃，脸颊鼓鼓的。", "price": 15, "satiety": 28, "energy": 6, "mood": 3, "animation": "eatBun", "minimumLevel": 2, "experience": 6 },
+    { "id": "peach", "name": "仙桃", "description": "咬一口仙桃，开心到脸红。", "price": 25, "satiety": 18, "energy": 20, "mood": 6, "animation": "eatPeach", "minimumLevel": 3, "experience": 8 }
+  ],
+  "jobs": [
+    { "id": "patrol", "name": "陈塘关巡城", "seconds": 60, "reward": 18, "energyCost": 8, "satietyCost": 4, "experience": 6, "animation": "busy", "minimumLevel": 1 },
+    { "id": "delivery", "name": "天宫送信", "seconds": 180, "reward": 55, "energyCost": 20, "satietyCost": 10, "experience": 18, "animation": "runRight", "minimumLevel": 2 },
+    { "id": "guard", "name": "守护香火", "seconds": 300, "reward": 90, "energyCost": 30, "satietyCost": 15, "experience": 30, "animation": "wait", "minimumLevel": 3 }
+  ],
+  "growth": {
+    "feedDailyCap": 36,
+    "touchDailyCap": 10,
+    "levels": [
+      { "level": 1, "experience": 0, "title": "小小哪吒", "giftCoins": 0, "workBonusPercent": 0, "benefit": "桂花糖、陈塘关巡城" },
+      { "level": 2, "experience": 20, "title": "元气伙伴", "giftCoins": 10, "workBonusPercent": 0, "benefit": "解锁莲蓉包、天宫送信" },
+      { "level": 3, "experience": 60, "title": "红绫小将", "giftCoins": 15, "workBonusPercent": 0, "benefit": "解锁仙桃、守护香火" },
+      { "level": 4, "experience": 120, "title": "风火守护", "giftCoins": 20, "workBonusPercent": 5, "benefit": "所有新接工作的报酬增加 5%" },
+      { "level": 5, "experience": 220, "title": "莲火神将", "giftCoins": 30, "workBonusPercent": 10, "benefit": "所有新接工作的报酬增加 10%" }
+    ]
+  }
+}
