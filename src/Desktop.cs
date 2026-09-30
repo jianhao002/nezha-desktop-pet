@@ -47,11 +47,13 @@ namespace NezhaDesktop
                     BitmapSource sheet = sheets[path];
                     int width = spec.FrameWidth > 0 ? spec.FrameWidth : config.FrameWidth;
                     int height = spec.FrameHeight > 0 ? spec.FrameHeight : config.FrameHeight;
-                    foreach (int column in spec.Frames)
+                    foreach (int tile in spec.Frames)
                     {
-                        if ((column + 1) * (long)width > sheet.PixelWidth || (spec.Row + 1) * (long)height > sheet.PixelHeight)
+                        int column = spec.Columns > 0 ? tile % spec.Columns : tile;
+                        int row = spec.Row + (spec.Columns > 0 ? tile / spec.Columns : 0);
+                        if ((column + 1) * (long)width > sheet.PixelWidth || (row + 1) * (long)height > sheet.PixelHeight)
                             throw new InvalidDataException("动作帧超出图集：" + pair.Key);
-                        frames.Add(Frame(new CroppedBitmap(sheet, new Int32Rect(column * width, spec.Row * height, width, height))));
+                        frames.Add(Frame(new CroppedBitmap(sheet, new Int32Rect(column * width, row * height, width, height))));
                     }
                 }
                 Animations[pair.Key] = frames.ToArray();
@@ -79,10 +81,16 @@ namespace NezhaDesktop
         public int FramesPainted { get; private set; }
         public string CurrentAnimation { get { return animation; } }
         public int CurrentFrameIndex { get { return lastFrame; } }
-        public double AnimationElapsedMilliseconds { get { return animationElapsedMs; } }
+        public double AnimationElapsedMilliseconds { get { return animationPlayer.ElapsedMilliseconds; } }
+        public bool ReactionBusy { get { return animationPlayer.IsProtected; } }
+        public bool CanFeed { get { return !ReactionBusy && !Engine.IsResting && Engine.State.Work == null; } }
+        public bool HaloEffectActive { get { return effects.HaloActive; } }
+        public bool WheelEffectActive { get { return effects.WheelsActive; } }
         public string LastNotice { get; private set; }
         public bool HasTray { get { return tray != null && tray.Visible; } }
         private readonly Image petImage;
+        private readonly PetEffects effects;
+        private readonly AnimationArbiter animationPlayer = new AnimationArbiter();
         private readonly Border bubble;
         private readonly TextBlock bubbleText;
         private readonly DispatcherTimer timer;
@@ -94,7 +102,6 @@ namespace NezhaDesktop
         private SpriteFrame visibleFrame;
         private string animation = "idle";
         private DateTime lastAnimationTick, bubbleUntil, nextRoam, nextSave, lastTick, nextPanelRefresh;
-        private double animationElapsedMs, reactionDurationMs;
         private int lastFrame = -1;
         private int moveDirection;
         private DateTime moveUntil;
@@ -116,6 +123,7 @@ namespace NezhaDesktop
                 Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(12, 0, 12, 4), VerticalAlignment = VerticalAlignment.Bottom,
                 Visibility = Visibility.Hidden, Child = bubbleText };
             Surface.Children.Add(bubble);
+            effects = new PetEffects(); Grid.SetRow(effects, 1); Surface.Children.Add(effects);
             petImage = new Image { Stretch = Stretch.Fill, Cursor = Cursors.Hand };
             Grid.SetRow(petImage, 1); Surface.Children.Add(petImage); Content = Surface;
             SetSize(engine.State.PetSize);
@@ -132,7 +140,7 @@ namespace NezhaDesktop
                 ClampCurrentScreen();
             };
             lastAnimationTick = lastTick = DateTime.UtcNow; nextRoam = lastTick.AddSeconds(15); nextSave = lastTick.AddSeconds(30);
-            DisplayFrame(0);
+            Play(engine.IsResting ? engine.State.Rest.Animation : "idle", true);
             timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(60) };
             timer.Tick += Tick; timer.Start();
             if (useTray) CreateTray();
@@ -145,6 +153,10 @@ namespace NezhaDesktop
             Forms.ContextMenuStrip menu = new Forms.ContextMenuStrip();
             menu.Items.Add("打开养成面板", null, delegate { Dispatcher.Invoke(new Action(OpenDashboard)); });
             menu.Items.Add("检查更新", null, delegate { Dispatcher.Invoke(new Action(OpenUpdate)); });
+            Forms.ToolStripMenuItem restItem = new Forms.ToolStripMenuItem(Engine.IsResting ? "叫醒哪吒" : "去睡一小会儿");
+            restItem.Click += delegate { Dispatcher.Invoke(new Action(delegate { if (Engine.IsResting) WakeAction(); else StartRestAction(); })); };
+            menu.Opening += delegate { restItem.Text = Engine.IsResting ? "叫醒哪吒" : "去睡一小会儿"; };
+            menu.Items.Add(restItem);
             menu.Items.Add("显示 / 隐藏桌宠", null, delegate { Dispatcher.Invoke(new Action(ToggleVisible)); });
             menu.Items.Add("回到主屏幕", null, delegate { Dispatcher.Invoke(new Action(ResetPosition)); });
             menu.Items.Add("退出", null, delegate { Dispatcher.Invoke(new Action(Close)); });
@@ -156,6 +168,7 @@ namespace NezhaDesktop
             ContextMenu menu = new ContextMenu { FontFamily = Ui.Font };
             AddMenu(menu, "养成面板 · 喂食 / 打工 / 零食铺", OpenDashboard);
             AddMenu(menu, "检查更新 · v" + Engine.Config.Version, OpenUpdate);
+            AddMenu(menu, Engine.IsResting ? "叫醒哪吒" : "去睡一小会儿", delegate { if (Engine.IsResting) WakeAction(); else StartRestAction(); });
             AddMenu(menu, "桌面游走：" + (Engine.State.Roaming ? "开" : "关"), delegate { Options(Engine.State.PetSize, !Engine.State.Roaming); });
             AddMenu(menu, "隐藏（托盘可恢复）", ToggleVisible);
             AddMenu(menu, "退出", Close);
@@ -236,7 +249,8 @@ namespace NezhaDesktop
             {
                 Point p = e.GetPosition(petImage);
                 Interaction part = Engine.Config.Hit(p.X / petImage.ActualWidth, p.Y / petImage.ActualHeight);
-                if (part != null) Execute(delegate { return Engine.Touch(part.Id, DateTime.UtcNow); });
+                if (Engine.IsResting) TouchPart("head");
+                else if (part != null) TouchPart(part.Id);
             }
             e.Handled = true;
         }
@@ -256,23 +270,65 @@ namespace NezhaDesktop
             try { ActionResult result = action(); Feedback(result); if (dashboard != null) dashboard.Refresh(true); return result; }
             catch (Exception ex) { Report(ex); return new ActionResult(false, "这次操作没有保存，请检查目录写入权限。", "upset"); }
         }
+        private ActionResult WaitForReaction()
+        {
+            string message = animation.StartsWith("eat", StringComparison.Ordinal) ? "哪吒还在细细品尝，等吃完再陪他玩吧。" : "哪吒正在回应你，稍等一小会儿。";
+            ShowNotice(message); return new ActionResult(false, message, animation);
+        }
+        public ActionResult Feed(string foodId)
+        {
+            if (ReactionBusy) return WaitForReaction();
+            return Execute(delegate { return Engine.Feed(foodId, DateTime.UtcNow); });
+        }
+        public ActionResult TouchPart(string partId)
+        {
+            if (Engine.IsResting)
+            {
+                string message = "嘘，哪吒正在睡觉。想陪他玩，可以在小屋里叫醒他。";
+                ShowNotice(message); return new ActionResult(false, message, Engine.State.Rest.Animation);
+            }
+            if (ReactionBusy) return WaitForReaction();
+            ActionResult result = Execute(delegate { return Engine.Touch(partId, DateTime.UtcNow); });
+            if (result.Ok) effects.Trigger(partId);
+            return result;
+        }
+        public ActionResult StartWork(string jobId)
+        {
+            if (ReactionBusy) return WaitForReaction();
+            return Execute(delegate { return Engine.StartWork(jobId, DateTime.UtcNow); });
+        }
+        public ActionResult StartRestAction()
+        {
+            if (ReactionBusy) return WaitForReaction();
+            return Execute(delegate { return Engine.StartRest(DateTime.UtcNow); });
+        }
+        public ActionResult WakeAction() { return Execute(delegate { return Engine.Wake(DateTime.UtcNow); }); }
+        public void ShowNotice(string message)
+        {
+            LastNotice = message; bubbleText.Text = message;
+            bubble.Visibility = Visibility.Visible; bubbleUntil = DateTime.UtcNow.AddSeconds(4);
+        }
         public void Feedback(ActionResult result)
         {
-            DateTime now = DateTime.UtcNow;
-            LastNotice = result.Message + (String.IsNullOrEmpty(result.GrowthMessage) ? "" : "  " + result.GrowthMessage);
-            bubbleText.Text = String.IsNullOrEmpty(result.GrowthMessage) ? result.Message : result.GrowthMessage;
-            bubble.Visibility = Visibility.Visible; bubbleUntil = now.AddSeconds(4);
+            ShowNotice(result.Message + (String.IsNullOrEmpty(result.GrowthMessage) ? "" : "  " + result.GrowthMessage));
+            if (!String.IsNullOrEmpty(result.GrowthMessage)) bubbleText.Text = result.GrowthMessage;
+            // Shopping and denied actions may show a message while another clip owns the pet.
+            if (ReactionBusy) return;
+            if (Engine.IsResting) { moveDirection = 0; Play(Engine.State.Rest.Animation, false); return; }
             Play(result.Animation, true);
             AnimationSpec spec = Engine.Config.Animations[animation];
             double cycle = (double)spec.FrameMs * Sprites.Animations[animation].Length;
-            reactionDurationMs = Math.Max(cycle, spec.DurationMs > 0 ? spec.DurationMs : 2800);
+            animationPlayer.ProtectReaction(Math.Max(cycle, spec.DurationMs > 0 ? spec.DurationMs : 2800));
             moveDirection = 0;
         }
         private void Play(string name, bool restart)
         {
             if (!Sprites.Animations.ContainsKey(name)) name = "idle";
             if (animation == name && !restart) return;
-            animation = name; lastAnimationTick = DateTime.UtcNow; animationElapsedMs = 0; lastFrame = -1; DisplayFrame(0);
+            animation = name; lastAnimationTick = DateTime.UtcNow; lastFrame = -1;
+            AnimationSpec spec = Engine.Config.Animations[animation];
+            animationPlayer.Start(spec.FrameMs, Sprites.Animations[animation].Length, spec.Loop != false);
+            DisplayFrame(0);
         }
         private void DisplayFrame(int index)
         {
@@ -285,14 +341,20 @@ namespace NezhaDesktop
             DateTime now = DateTime.UtcNow;
             double elapsed = Math.Max(0, Math.Min(0.15, (now - lastTick).TotalSeconds)); lastTick = now;
             // UI stalls slow the clip briefly instead of dropping meaningful intermediate poses.
-            animationElapsedMs += Math.Max(0, Math.Min(Engine.Config.Animations[animation].FrameMs, (now - lastAnimationTick).TotalMilliseconds));
+            animationPlayer.Advance((now - lastAnimationTick).TotalMilliseconds);
+            effects.Advance(elapsed * 1000);
             lastAnimationTick = now;
             Engine.Advance(now);
             if (now >= bubbleUntil) bubble.Visibility = Visibility.Hidden;
-            if (animationElapsedMs >= reactionDurationMs && !pointerDown)
+            if (!animationPlayer.ReactionActive && !pointerDown)
             {
-                reactionDurationMs = 0;
-                if (Engine.State.Work != null)
+                animationPlayer.ClearReaction();
+                if (Engine.IsResting)
+                {
+                    moveDirection = 0;
+                    Play(Engine.State.Rest.Animation, false);
+                }
+                else if (Engine.State.Work != null)
                 {
                     moveDirection = 0;
                     Play(Engine.WorkReady(now) ? "wave" : Engine.State.Work.Animation, false);
@@ -310,10 +372,7 @@ namespace NezhaDesktop
                 }
                 else { moveDirection = 0; Play("idle", false); }
             }
-            int rawFrame = (int)(animationElapsedMs / Engine.Config.Animations[animation].FrameMs);
-            int frameCount = Sprites.Animations[animation].Length;
-            int frame = Engine.Config.Animations[animation].Loop == false ? Math.Min(rawFrame, frameCount - 1) : rawFrame % frameCount;
-            if (IsVisible || dashboard == null) DisplayFrame(frame);
+            if (IsVisible || dashboard == null) DisplayFrame(animationPlayer.FrameIndex);
             if (dashboard != null && now >= nextPanelRefresh) { nextPanelRefresh = now.AddMilliseconds(500); dashboard.Refresh(false); }
             if (now >= nextSave)
             {
@@ -415,6 +474,9 @@ namespace NezhaDesktop
         private readonly Dictionary<Button, Func<bool>> conditions = new Dictionary<Button, Func<bool>>();
         private string selected = "home";
         private Button collect;
+        private TextBlock restStatus;
+        private ProgressBar restProgress;
+        private Button restAction;
         public Border PreviewRoot { get; private set; }
         public Dashboard(PetWindow window)
         {
@@ -471,11 +533,12 @@ namespace NezhaDesktop
             SetStat(satiety, satietyText, "饱腹", state.Satiety); SetStat(energy, energyText, "体力", state.Energy); SetStat(mood, moodText, "心情", state.Mood);
             DateTime now = DateTime.UtcNow;
             workStatus.Text = state.Work == null ? "今天想做点什么？" : engine.WorkReady(now) ? state.Work.Name + "已完成，快来领取报酬。" : state.Work.Name + "进行中 · 剩余 " + FormatTime(engine.RemainingSeconds(now));
-            if (collect != null) collect.IsEnabled = engine.WorkReady(now);
+            if (collect != null) collect.IsEnabled = engine.WorkReady(now) && !pet.ReactionBusy;
+            UpdateRest(now);
             foreach (KeyValuePair<Button, Func<bool>> condition in conditions) condition.Key.IsEnabled = condition.Value();
             if (!rebuild) return;
             foreach (KeyValuePair<string, Button> n in navigation) { n.Value.Background = n.Key == selected ? Ui.Red : Ui.Cream; n.Value.Foreground = n.Key == selected ? Brushes.White : Ui.Ink; }
-            page.Children.Clear(); conditions.Clear(); collect = null;
+            page.Children.Clear(); conditions.Clear(); collect = null; restStatus = null; restProgress = null; restAction = null;
             if (selected == "shop") Shop(); else if (selected == "bag") Bag(); else if (selected == "work") Work(); else if (selected == "growth") Growth(); else Home();
         }
         private static void SetStat(ProgressBar bar, TextBlock text, string label, double value)
@@ -483,18 +546,20 @@ namespace NezhaDesktop
         private void Home()
         {
             Grid hero = new Grid(); hero.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(130) }); hero.ColumnDefinitions.Add(new ColumnDefinition());
-            Image image = new Image { Source = pet.Sprites.Animations["idle"][2].Image, Width = 120, Height = 130, Stretch = Stretch.Uniform };
+            SpriteFrame[] portrait = pet.Sprites.Animations[engine.IsResting ? engine.State.Rest.Animation : "idle"];
+            Image image = new Image { Source = portrait[Math.Min(2, portrait.Length - 1)].Image, Width = 120, Height = 130, Stretch = Stretch.Uniform };
             hero.Children.Add(image);
-            StackPanel welcome = new StackPanel { Margin = new Thickness(14, 16, 0, 0) }; welcome.Children.Add(Ui.Text("今天也一起元气满满", 18, Ui.Ink));
-            TextBlock status = Ui.Text("摸摸头、戳戳身体，或点一下风火轮，看看哪吒的回应。", 13, Ui.Muted); status.Margin = new Thickness(0, 9, 0, 12); welcome.Children.Add(status);
-            welcome.Children.Add(Ui.Button("去背包喂一口", delegate { SelectPage("bag"); }, true)); Grid.SetColumn(welcome, 1); hero.Children.Add(welcome); page.Children.Add(Ui.Card(hero));
+            StackPanel welcome = new StackPanel { Margin = new Thickness(14, 16, 0, 0) }; welcome.Children.Add(Ui.Text(engine.IsResting ? "睡个小觉，补充元气" : "今天也一起元气满满", 18, Ui.Ink));
+            TextBlock status = Ui.Text(engine.IsResting ? "哪吒正在安静休息。醒来以后，再吃点心、陪你一起玩。" : "摸摸头、戳戳身体，或点一下风火轮，看看哪吒的回应。", 13, Ui.Muted); status.Margin = new Thickness(0, 9, 0, 12); welcome.Children.Add(status);
+            welcome.Children.Add(Ui.Button(engine.IsResting ? "去背包看看" : "去背包喂一口", delegate { SelectPage("bag"); }, true)); Grid.SetColumn(welcome, 1); hero.Children.Add(welcome); page.Children.Add(Ui.Card(hero));
+            RestCard();
             StackPanel goal = new StackPanel(); goal.Children.Add(Ui.Text("下一站的惊喜", 16, Ui.Ink));
             string next = engine.NextLevel == null ? "已经成为" + engine.CurrentLevel.Title + "，当前成长路线已完成。" : "再积累 " + (engine.NextLevel.Experience - engine.State.Experience) + " 经验 → Lv." + engine.NextLevel.Level + " " + engine.NextLevel.Title + "\n" + engine.NextLevel.Benefit;
             TextBlock nextText = Ui.Text(next, 12, Ui.Muted); nextText.Margin = new Thickness(0, 8, 0, 12); goal.Children.Add(nextText);
             goal.Children.Add(Ui.Button("看看成长路线", delegate { SelectPage("growth"); }, false)); page.Children.Add(Ui.Card(goal));
             StackPanel routine = new StackPanel(); routine.Children.Add(Ui.Text("烟火日常", 16, Ui.Ink));
             TextBlock flow = Ui.Text("打工赚金币 → 零食铺买点心 → 背包里喂食", 13, Ui.Muted); flow.Margin = new Thickness(0, 8, 0, 8); routine.Children.Add(flow);
-            TextBlock tips = Ui.Text("闲下来会慢慢恢复体力。久未打开也只按最多一小时计算状态变化，回来依然能轻松照顾。", 12, Ui.Muted); routine.Children.Add(tips); page.Children.Add(Ui.Card(routine));
+            TextBlock tips = Ui.Text("闲下来会慢慢恢复体力，也可以睡一小会儿补充元气。久未打开也只按最多一小时计算日常状态变化，回来依然能轻松照顾。", 12, Ui.Muted); routine.Children.Add(tips); page.Children.Add(Ui.Card(routine));
             StackPanel settings = new StackPanel(); settings.Children.Add(Ui.Text("陪伴方式", 16, Ui.Ink));
             CheckBox roam = new CheckBox { Content = "偶尔在桌面上走一走", IsChecked = engine.State.Roaming, Foreground = Ui.Ink, Margin = new Thickness(0, 12, 0, 14) };
             roam.Checked += delegate { pet.Options(engine.State.PetSize, true); }; roam.Unchecked += delegate { pet.Options(engine.State.PetSize, false); }; settings.Children.Add(roam);
@@ -505,6 +570,32 @@ namespace NezhaDesktop
             TextBlock version = Ui.Text("当前版本 v" + engine.Config.Version + " · 更新会保留金币、等级和背包", 12, Ui.Muted);
             version.Margin = new Thickness(0, 8, 0, 12); updates.Children.Add(version);
             updates.Children.Add(Ui.Button("检查更新", pet.OpenUpdate, false)); page.Children.Add(Ui.Card(updates));
+        }
+        private void RestCard()
+        {
+            StackPanel rest = new StackPanel(); rest.Children.Add(Ui.Text("午睡补元气", 16, Ui.Ink));
+            restStatus = Ui.Text("", 12, Ui.Muted); restStatus.Margin = new Thickness(0, 8, 0, 10); rest.Children.Add(restStatus);
+            restProgress = new ProgressBar { Minimum = 0, Maximum = 1, Height = 7, Foreground = Ui.Color("#9D91B0"), Background = Ui.Line, BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 0, 12) };
+            rest.Children.Add(restProgress);
+            restAction = Ui.Button("", delegate { if (engine.IsResting) pet.WakeAction(); else pet.StartRestAction(); }, true);
+            rest.Children.Add(restAction); UpdateRest(DateTime.UtcNow); page.Children.Add(Ui.Card(rest));
+        }
+        private void UpdateRest(DateTime now)
+        {
+            if (restStatus == null) return;
+            if (engine.IsResting)
+            {
+                int remaining = engine.RestRemainingSeconds(now);
+                restStatus.Text = remaining > 0 ? "哪吒正睡得香 · 剩余 " + FormatTime(remaining) + "\n提前叫醒也会按已睡的时间补充元气。" : "已经睡饱了，叫醒哪吒一起玩吧。";
+                restProgress.Visibility = Visibility.Visible; restProgress.Value = engine.RestProgress(now);
+                restAction.Content = remaining > 0 ? "提前叫醒" : "叫醒哪吒"; restAction.IsEnabled = true;
+            }
+            else
+            {
+                restStatus.Text = "睡 " + FormatTime(engine.Config.Rest.Seconds) + "，体力 +" + engine.Config.Rest.EnergyReward + "、心情 +" + engine.Config.Rest.MoodReward + "。\n睡觉时不打工、不喂食，醒来再继续。";
+                restProgress.Visibility = Visibility.Collapsed; restProgress.Value = 0;
+                restAction.Content = "去睡一小会儿"; restAction.IsEnabled = engine.State.Work == null && !pet.ReactionBusy && engine.State.Energy < 99.99;
+            }
         }
         private void Shop()
         {
@@ -528,8 +619,8 @@ namespace NezhaDesktop
                 Food chosen = food; int count = engine.State.Inventory[food.Id];
                 StackPanel text = new StackPanel(); text.Children.Add(Ui.Text(food.Name + "  × " + count, 17, Ui.Ink));
                 TextBlock effect = Ui.Text(FoodEffect(food), 12, Ui.Muted); effect.Margin = new Thickness(0, 8, 0, 0); text.Children.Add(effect);
-                Button feed = Ui.Button("喂一份", delegate { pet.Execute(delegate { return engine.Feed(chosen.Id, DateTime.UtcNow); }); }, true);
-                EnableWhen(feed, delegate { return engine.State.Inventory[chosen.Id] > 0 && engine.State.Work == null && engine.State.Satiety < 99.99; });
+                Button feed = Ui.Button("喂一份", delegate { pet.Feed(chosen.Id); }, true);
+                EnableWhen(feed, delegate { return engine.State.Inventory[chosen.Id] > 0 && pet.CanFeed && engine.State.Satiety < 99.99; });
                 page.Children.Add(FoodCard(food, text, feed));
             }
             page.Children.Add(Ui.Button("去零食铺补货", delegate { SelectPage("shop"); }, false));
@@ -538,16 +629,16 @@ namespace NezhaDesktop
         {
             Intro("今日打工", "一次接一份工作，完成后领取金币。关闭程序也会继续计时。");
             StackPanel active = new StackPanel(); active.Children.Add(workStatus);
-            collect = Ui.Button("领取打工报酬", delegate { pet.Execute(delegate { return engine.Collect(DateTime.UtcNow); }); }, true);
-            collect.Margin = new Thickness(0, 12, 0, 0); collect.IsEnabled = engine.WorkReady(DateTime.UtcNow); active.Children.Add(collect); page.Children.Add(Ui.Card(active));
+            collect = Ui.Button("领取打工报酬", delegate { if (!pet.ReactionBusy) pet.Execute(delegate { return engine.Collect(DateTime.UtcNow); }); }, true);
+            collect.Margin = new Thickness(0, 12, 0, 0); collect.IsEnabled = engine.WorkReady(DateTime.UtcNow) && !pet.ReactionBusy; active.Children.Add(collect); page.Children.Add(Ui.Card(active));
             foreach (Job job in engine.Config.Jobs)
             {
                 Job chosen = job; StackPanel text = new StackPanel(); text.Children.Add(Ui.Text(job.Name, 16, Ui.Ink));
                 TextBlock reward = Ui.Text(FormatTime(job.Seconds) + " · 收入 " + engine.WorkReward(job) + " 金币 · 经验 +" + job.Experience, 12, Ui.Muted);
                 reward.Margin = new Thickness(0, 7, 0, 5); text.Children.Add(reward);
                 text.Children.Add(Ui.Text("消耗：体力 " + job.EnergyCost + "，饱腹 " + job.SatietyCost, 12, Ui.Muted));
-                Button start = Ui.Button(engine.Level < job.MinimumLevel ? "Lv." + job.MinimumLevel + " 解锁" : "出发", delegate { pet.Execute(delegate { return engine.StartWork(chosen.Id, DateTime.UtcNow); }); }, true);
-                EnableWhen(start, delegate { return engine.Level >= chosen.MinimumLevel && engine.State.Work == null && engine.State.Energy >= chosen.EnergyCost && engine.State.Satiety >= chosen.SatietyCost + 10; });
+                Button start = Ui.Button(engine.Level < job.MinimumLevel ? "Lv." + job.MinimumLevel + " 解锁" : "出发", delegate { pet.StartWork(chosen.Id); }, true);
+                EnableWhen(start, delegate { return engine.Level >= chosen.MinimumLevel && engine.State.Work == null && !engine.IsResting && !pet.ReactionBusy && engine.State.Energy >= chosen.EnergyCost && engine.State.Satiety >= chosen.SatietyCost + 10; });
                 page.Children.Add(RowCard(text, start));
             }
         }

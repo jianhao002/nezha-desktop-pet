@@ -17,6 +17,7 @@ $petChecks = @(
     @{ Name = 'preview'; Argument = '--preview'; Report = 'ui-smoke.txt' },
     @{ Name = 'native'; Argument = '--native-smoke'; Report = 'native-smoke.txt' },
     @{ Name = 'food'; Argument = '--food-preview'; Report = 'food-playback.txt' },
+    @{ Name = 'actions'; Argument = '--actions-preview'; Report = 'actions-playback.txt' },
     @{ Name = 'update'; Argument = '--update-test'; Report = 'update-test-results.txt' }
 )
 foreach ($petCheck in $petChecks) {

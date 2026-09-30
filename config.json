@@ -1,6 +1,6 @@
 {
   "name": "焰轮哪吒",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "frameWidth": 192,
   "frameHeight": 208,
   "defaultSize": 260,
@@ -16,13 +16,16 @@
     "review": { "sheet": "assets/nezha.png", "row": 8, "frames": [0,1,2,3,4,5], "frameMs": 150 },
     "eatCandy": { "files": ["assets/eat-candy/00.png", "assets/eat-candy/01.png", "assets/eat-candy/02.png", "assets/eat-candy/03.png", "assets/eat-candy/04.png", "assets/eat-candy/05.png"], "frameMs": 220, "durationMs": 1650, "loop": false },
     "eatBun": { "files": ["assets/eat-bun/00.png", "assets/eat-bun/01.png", "assets/eat-bun/02.png", "assets/eat-bun/03.png", "assets/eat-bun/04.png", "assets/eat-bun/05.png"], "frameMs": 240, "durationMs": 1750, "loop": false },
-    "eatPeach": { "files": ["assets/eat-peach/00.png", "assets/eat-peach/01.png", "assets/eat-peach/02.png", "assets/eat-peach/03.png", "assets/eat-peach/04.png", "assets/eat-peach/05.png"], "frameMs": 240, "durationMs": 1800, "loop": false }
+    "eatPeach": { "files": ["assets/eat-peach/00.png", "assets/eat-peach/01.png", "assets/eat-peach/02.png", "assets/eat-peach/03.png", "assets/eat-peach/04.png", "assets/eat-peach/05.png"], "frameMs": 240, "durationMs": 1800, "loop": false },
+    "touchHead": { "sheet": "assets/touch-head.png", "columns": 2, "row": 0, "frameWidth": 512, "frameHeight": 512, "frames": [0,1,2,3,4,5], "frameMs": 220, "durationMs": 1650, "loop": false },
+    "touchBody": { "sheet": "assets/touch-body.png", "columns": 2, "row": 0, "frameWidth": 512, "frameHeight": 512, "frames": [0,1,2,3,4,5], "frameMs": 200, "durationMs": 1500, "loop": false },
+    "sleep": { "sheet": "assets/sleep.png", "columns": 2, "row": 0, "frameWidth": 512, "frameHeight": 512, "frames": [0,1,2,3,4,5], "frameMs": 450, "loop": true }
   },
   "interactions": [
-    { "id": "head", "name": "头部", "x": 0.34, "y": 0.17, "width": 0.34, "height": 0.24, "animation": "wave", "message": "嘿！今天也要元气满满。", "mood": 1 },
+    { "id": "head", "name": "头部", "x": 0.34, "y": 0.17, "width": 0.34, "height": 0.24, "animation": "touchHead", "message": "摸摸头，今天也要元气满满！", "mood": 1 },
     { "id": "leftHand", "name": "左手", "x": 0.25, "y": 0.39, "width": 0.16, "height": 0.22, "animation": "review", "message": "看我舞动红绫！", "mood": 1 },
     { "id": "rightHand", "name": "右手", "x": 0.63, "y": 0.39, "width": 0.15, "height": 0.23, "animation": "review", "message": "法宝准备好了！", "mood": 1 },
-    { "id": "body", "name": "身体", "x": 0.39, "y": 0.41, "width": 0.25, "height": 0.27, "animation": "jump", "message": "有点痒，哈哈！", "mood": 1 },
+    { "id": "body", "name": "身体", "x": 0.39, "y": 0.41, "width": 0.25, "height": 0.27, "animation": "touchBody", "message": "有点痒，哈哈！", "mood": 1 },
     { "id": "wheels", "name": "风火轮", "x": 0.23, "y": 0.70, "width": 0.55, "height": 0.29, "animation": "runRight", "message": "风火轮，出发！", "mood": 1 },
     { "id": "halo", "name": "神环", "x": 0.26, "y": 0.01, "width": 0.49, "height": 0.37, "animation": "idle", "message": "神光护佑，诸事顺遂。", "mood": 1 }
   ],
@@ -36,6 +39,7 @@
     { "id": "delivery", "name": "天宫送信", "seconds": 180, "reward": 55, "energyCost": 20, "satietyCost": 10, "experience": 18, "animation": "runRight", "minimumLevel": 2 },
     { "id": "guard", "name": "守护香火", "seconds": 300, "reward": 90, "energyCost": 30, "satietyCost": 15, "experience": 30, "animation": "wait", "minimumLevel": 3 }
   ],
+  "rest": { "seconds": 180, "energyReward": 25, "moodReward": 4, "animation": "sleep" },
   "growth": {
     "feedDailyCap": 36,
     "touchDailyCap": 10,

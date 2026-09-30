@@ -141,7 +141,7 @@ namespace NezhaDesktop
                 legacy.Work = new ActiveWork { JobId = "old-job", Name = "旧版工作", EndsUtc = Now.AddSeconds(90), Reward = 57, Experience = 12, Animation = "busy" };
                 new SaveStore(path).Write(legacy);
                 GameEngine migrated = new GameEngine(config, new SaveStore(path), Now);
-                Check(migrated.State.SchemaVersion == 2 && migrated.State.Experience == 65 && migrated.Level == 3, "旧经验未保留");
+                Check(migrated.State.SchemaVersion == 3 && migrated.State.Experience == 65 && migrated.Level == 3, "旧经验未保留");
                 Check(migrated.State.Inventory[config.Foods[1].Id] == 3 && migrated.State.Work.Reward == 57, "旧物品或进行中工作丢失");
                 int before = migrated.State.Coins;
                 Check(migrated.Collect(Now.AddSeconds(90)).Ok && migrated.State.Coins == before + 57 && migrated.State.Experience == 77, "旧版报酬快照未按原值结算");
@@ -195,6 +195,112 @@ namespace NezhaDesktop
                 Check(failed && engine.Level == 1 && engine.State.Coins == 50 && engine.State.RewardedLevels.Count == 1, "存档失败仍升级或发钱");
                 Check(engine.Touch("head", Now).Ok && engine.Level == 2 && engine.State.Coins == 50 + config.Growth.Levels[1].GiftCoins, "失败后重试不能正确升级");
             });
+            test("rest-start-persists-and-early-wake-uses-snapshot", delegate {
+                PetConfig adjusted = Json.Clone(config);
+                adjusted.Rest.Seconds = 180; adjusted.Rest.EnergyReward = 25; adjusted.Rest.MoodReward = 4;
+                string path = Path.Combine(output, "rest-early", "save.json");
+                GameEngine engine = New(adjusted, path);
+                engine.State.Energy = 50; engine.State.Mood = 60; engine.Save();
+                int items = engine.State.Inventory[config.Foods[0].Id];
+                Check(engine.StartRest(Now).Ok && engine.IsResting, "休息没有开始");
+                Check(engine.RestProgress(Now) == 0 && engine.RestRemainingSeconds(Now) == 180, "休息初始进度错误");
+                adjusted.Rest.EnergyReward = 100; adjusted.Rest.MoodReward = 100; adjusted.Rest.Seconds = 600;
+                GameEngine restarted = new GameEngine(adjusted, new SaveStore(path), Now.AddSeconds(90));
+                Check(restarted.IsResting && Math.Abs(restarted.RestProgress(Now.AddSeconds(90)) - 0.5) < 0.001
+                    && restarted.RestRemainingSeconds(Now.AddSeconds(90)) == 90, "重启后休息进度丢失");
+                Check(restarted.State.Energy == 50 && restarted.State.Mood == 60, "休息中叠加了自然恢复或心情衰减");
+                Check(restarted.Wake(Now.AddSeconds(90)).Ok && !restarted.IsResting, "提前叫醒没有结束休息");
+                Check(Math.Abs(restarted.State.Energy - 62.5) < 0.001 && Math.Abs(restarted.State.Mood - 62) < 0.001, "提前叫醒未按旧奖励快照比例恢复");
+                Check(restarted.State.Coins == 50 && restarted.State.Experience == 0 && restarted.State.Inventory[config.Foods[0].Id] == items, "睡觉改变了金币、经验或食物");
+            });
+            test("rest-offline-completion-rewards-exactly-once", delegate {
+                string path = Path.Combine(output, "rest-offline", "save.json"); GameEngine engine = New(config, path);
+                engine.State.Energy = 30; engine.State.Mood = 40; engine.Save();
+                Check(engine.StartRest(Now).Ok, "休息未开始");
+                DateTime returned = Now.AddDays(2);
+                GameEngine restarted = new GameEngine(config, new SaveStore(path), returned);
+                Check(restarted.IsResting && restarted.RestProgress(returned) == 1 && restarted.RestRemainingSeconds(returned) == 0, "离线休息未保留完成状态");
+                Check(restarted.State.Energy == 30 && restarted.State.Mood == 40 && Math.Abs(restarted.State.Satiety - 64) < 0.001, "离线休息属性或一小时上限错误");
+                Check(restarted.Wake(returned).Ok && restarted.State.Energy == Math.Min(100, 30 + config.Rest.EnergyReward)
+                    && restarted.State.Mood == Math.Min(100, 40 + config.Rest.MoodReward), "离线叫醒奖励错误");
+                double energy = restarted.State.Energy, mood = restarted.State.Mood;
+                Check(!restarted.Wake(returned).Ok && restarted.State.Energy == energy && restarted.State.Mood == mood, "重复叫醒重复恢复");
+                GameEngine again = new GameEngine(config, new SaveStore(path), returned);
+                Check(!again.IsResting && !again.Wake(returned).Ok && again.State.Energy == energy && again.State.Mood == mood, "重启后重复获得休息奖励");
+            });
+            test("rest-rewards-and-clock-rollback-are-clamped", delegate {
+                string path = Path.Combine(output, "rest-cap", "save.json"); GameEngine engine = New(config, path);
+                engine.State.Energy = 99; engine.State.Mood = 99; engine.Save();
+                Check(engine.StartRest(Now).Ok, "未满体力无法休息");
+                Check(engine.RestProgress(Now.AddHours(-1)) == 0 && engine.RestRemainingSeconds(Now.AddHours(-1)) == config.Rest.Seconds, "时钟回退产生负进度或超长剩余时间");
+                Check(engine.Wake(Now.AddHours(2)).Ok && engine.State.Energy == 100 && engine.State.Mood == 100, "恢复超出属性上限或超时奖励重复增长");
+                Check(!engine.StartRest(Now.AddHours(2)).Ok && !engine.IsResting, "满体力仍然睡觉");
+                engine.State.Energy = 50; engine.State.Mood = 60;
+                Check(engine.StartRest(Now.AddHours(2)).Ok && engine.Wake(Now.AddHours(1)).Ok, "回退后不能安全叫醒");
+                Check(engine.State.Energy == 50 && engine.State.Mood == 60, "时钟回退提前发放休息奖励");
+            });
+            test("rest-conflicts-do-not-consume-resources-or-touch-xp", delegate {
+                GameEngine engine = New(config, Path.Combine(output, "rest-conflicts", "save.json"));
+                int items = engine.State.Inventory[config.Foods[0].Id]; Check(engine.StartRest(Now).Ok, "休息未开始");
+                Check(!engine.StartRest(Now).Ok && !engine.StartWork(config.Jobs[0].Id, Now).Ok && !engine.Feed(config.Foods[0].Id, Now).Ok, "休息中允许重复休息、打工或喂食");
+                ActionResult touch = engine.Touch("head", Now);
+                Check(!touch.Ok && touch.Animation == config.Rest.Animation && engine.State.LastTouchUtc == DateTime.MinValue
+                    && engine.State.Experience == 0 && engine.State.TouchExperienceToday == 0, "休息中触摸获得经验或打断睡觉动作");
+                Check(engine.State.Inventory[config.Foods[0].Id] == items && engine.State.Coins == 50 && engine.State.Work == null, "冲突操作消耗了资源");
+                Check(engine.Wake(Now).Ok && engine.Feed(config.Foods[0].Id, Now).Ok && engine.StartWork(config.Jobs[0].Id, Now).Ok, "叫醒后仍不能恢复正常操作");
+            });
+            test("uncollected-work-blocks-rest", delegate {
+                GameEngine engine = New(config, Path.Combine(output, "rest-work", "save.json")); Job job = config.Jobs[0];
+                Check(engine.StartWork(job.Id, Now).Ok && !engine.StartRest(Now).Ok && !engine.IsResting, "打工中还能睡觉");
+                DateTime done = Now.AddSeconds(job.Seconds);
+                Check(!engine.StartRest(done).Ok && !engine.IsResting && engine.State.Work != null, "未领取打工收入仍可睡觉");
+                Check(engine.Collect(done).Ok && engine.StartRest(done).Ok, "领取收入后无法开始休息");
+            });
+            test("rest-waiting-does-not-double-passive-recovery", delegate {
+                GameEngine engine = New(config, Path.Combine(output, "rest-passive", "save.json"));
+                engine.State.Energy = 20; engine.State.Mood = 30; engine.Save(); engine.StartRest(Now);
+                DateTime wakeTime = Now.AddHours(1); engine.Advance(wakeTime);
+                Check(engine.State.Energy == 20 && engine.State.Mood == 30, "完成后等待叫醒还叠加了被动恢复");
+                Check(engine.Wake(wakeTime).Ok, "完整休息不能叫醒");
+                double energy = engine.State.Energy, mood = engine.State.Mood;
+                engine.Advance(wakeTime.AddSeconds(180));
+                Check(Math.Abs(engine.State.Energy - (energy + 1)) < 0.001 && Math.Abs(engine.State.Mood - (mood - 0.1)) < 0.001, "叫醒后自然恢复未从叫醒时刻继续");
+            });
+            test("schema-two-migration-preserves-all-existing-progress", delegate {
+                string path = Path.Combine(output, "rest-migration", "save.json"); SaveData previous = SaveData.Fresh(config, Now);
+                previous.SchemaVersion = 2; previous.Coins = 111; previous.Experience = 11;
+                previous.Inventory[config.Foods[0].Id] = 7; previous.FeedExperienceToday = 8; previous.TouchExperienceToday = 2;
+                previous.Work = new ActiveWork { JobId = "old-job", Name = "旧工作", EndsUtc = Now.AddMinutes(5), Reward = 71, Experience = 12, Animation = "busy" };
+                new SaveStore(path).Write(previous);
+                GameEngine migrated = new GameEngine(config, new SaveStore(path), Now);
+                Check(migrated.State.SchemaVersion == 3 && !migrated.IsResting && migrated.State.Coins == 111 && migrated.State.Experience == 11
+                    && migrated.State.Inventory[config.Foods[0].Id] == 7 && migrated.State.FeedExperienceToday == 8 && migrated.State.TouchExperienceToday == 2, "v0.3 存档迁移丢失养成进度");
+                Check(migrated.State.Work.JobId == "old-job" && migrated.State.Work.Reward == 71 && migrated.State.Work.Experience == 12
+                    && migrated.State.RewardedLevels.SequenceEqual(previous.RewardedLevels), "迁移改变了工作快照或领取记录");
+            });
+            test("rest-save-failures-roll-back-start-and-wake", delegate {
+                string path = Path.Combine(output, "rest-save-rollback", "save.json"); GameEngine engine = New(config, path);
+                engine.State.Energy = 50; engine.State.Mood = 60; engine.Save(); bool failed = false;
+                using (FileStream locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                { try { engine.StartRest(Now); } catch (IOException) { failed = true; } }
+                Check(failed && !engine.IsResting && engine.State.Energy == 50, "休息开始写入失败没有回滚");
+                Check(engine.StartRest(Now).Ok, "休息开始失败后无法重试"); failed = false;
+                DateTime wakeTime = Now.AddSeconds(config.Rest.Seconds);
+                using (FileStream locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                { try { engine.Wake(wakeTime); } catch (IOException) { failed = true; } }
+                Check(failed && engine.IsResting && engine.State.Energy == 50 && engine.State.Mood == 60 && engine.State.LastUpdatedUtc == Now, "叫醒写入失败留下奖励或时间推进");
+                GameEngine restarted = new GameEngine(config, new SaveStore(path), wakeTime);
+                Check(restarted.IsResting && restarted.Wake(wakeTime).Ok && restarted.State.Energy == 50 + config.Rest.EnergyReward, "叫醒保存失败后重启无法正确结算");
+            });
+            test("invalid-or-concurrent-rest-save-is-rejected", delegate {
+                SaveData invalid = SaveData.Fresh(config, Now);
+                invalid.Rest = new ActiveRest { StartedUtc = Now, EndsUtc = Now, EnergyReward = 25, MoodReward = 4, Animation = config.Rest.Animation };
+                CheckInvalidSave(invalid, "零时长休息存档没有拒绝");
+                invalid.Rest.EndsUtc = Now.AddMinutes(3); invalid.Rest.EnergyReward = Double.NaN;
+                CheckInvalidSave(invalid, "非法恢复量没有拒绝");
+                invalid.Rest.EnergyReward = 25; invalid.Work = new ActiveWork { JobId = "patrol", EndsUtc = Now.AddSeconds(60), Reward = 18, Experience = 6 };
+                CheckInvalidSave(invalid, "休息和工作并发存档没有拒绝");
+            });
             results.Add("RESULT " + (results.Count - failures) + " passed, " + failures + " failed");
             File.WriteAllLines(Path.Combine(output, "test-results.txt"), results.ToArray(), new System.Text.UTF8Encoding(false));
             Console.WriteLine(String.Join(Environment.NewLine, results.ToArray()));
@@ -203,5 +309,10 @@ namespace NezhaDesktop
         private static GameEngine New(PetConfig config, string path)
         { if (File.Exists(path)) throw new InvalidOperationException("测试目录必须是新的：" + path); return new GameEngine(config, new SaveStore(path), Now); }
         private static void Check(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+        private static void CheckInvalidSave(SaveData data, string message)
+        {
+            bool rejected = false; try { data.Validate(); } catch (InvalidDataException) { rejected = true; }
+            Check(rejected, message);
+        }
     }
 }

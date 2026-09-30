@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
@@ -34,7 +35,7 @@ namespace NezhaDesktop
                 if (args.Length > 0)
                 {
                     string command = args[0];
-                    bool reports = command == "--self-test" || command == "--preview" || command == "--native-smoke" || command == "--food-preview" || command == "--update-test" || command == "--update-online-test";
+                    bool reports = command == "--self-test" || command == "--preview" || command == "--native-smoke" || command == "--food-preview" || command == "--actions-preview" || command == "--update-test" || command == "--update-online-test";
                     if (reports && args.Length == 2) reportDirectory = Path.GetFullPath(args[1]);
                     else if (command != "--update-health" || args.Length != 2) throw new ArgumentException("启动参数无效。");
                 }
@@ -88,6 +89,11 @@ namespace NezhaDesktop
                 {
                     if (reportDirectory == null) throw new ArgumentException("需要指定食物动画验证目录。");
                     return FoodPreview(app, config, sprites, reportDirectory);
+                }
+                if (args.Length > 0 && args[0] == "--actions-preview")
+                {
+                    if (reportDirectory == null) throw new ArgumentException("需要指定新的互动动作验证目录。");
+                    return ActionsPreview(app, config, sprites, reportDirectory);
                 }
                     SaveStore store = new SaveStore(Path.Combine(root, "data", "save.json"));
                     GameEngine engine = new GameEngine(config, store, DateTime.UtcNow);
@@ -213,6 +219,188 @@ namespace NezhaDesktop
                 pet.Execute(delegate { return engine.Feed(config.Foods[foodIndex].Id, DateTime.UtcNow); }); began = DateTime.UtcNow;
             };
             observe.Start(); return app.Run();
+        }
+        private static int ActionsPreview(Application app, PetConfig config, SpriteLibrary sprites, string output)
+        {
+            if (Directory.Exists(output)) throw new InvalidOperationException("互动动作验证目录必须是新的。");
+            Directory.CreateDirectory(output);
+            List<string> results = new List<string>();
+            Action<bool, string> check = delegate(bool passed, string name) { results.Add((passed ? "PASS " : "FAIL ") + name); };
+
+            AnimationArbiter deterministic = new AnimationArbiter();
+            deterministic.Start(220, 6, false); deterministic.ProtectReaction(1650);
+            List<int> simulated = new List<int> { deterministic.FrameIndex };
+            for (int i = 0; i < 5; i++) { deterministic.Advance(10000); simulated.Add(deterministic.FrameIndex); }
+            bool ordered = simulated.Count == 6;
+            for (int i = 0; i < simulated.Count; i++) if (simulated[i] != i) ordered = false;
+            check(ordered && deterministic.IsProtected, "arbiter-stall-preserves-every-pose frames=" + String.Join(",", simulated));
+            deterministic.Advance(220);
+            check(deterministic.FrameIndex == 5 && deterministic.IsProtected, "arbiter-finite-holds-last-frame-before-duration");
+            while (deterministic.IsProtected) deterministic.Advance(220);
+            check(deterministic.FrameIndex == 5 && !deterministic.ReactionActive, "arbiter-unlocks-only-after-complete-duration");
+            deterministic.Start(150, 6, true);
+            for (int i = 0; i < 6; i++) deterministic.Advance(150);
+            check(deterministic.FrameIndex == 0 && !deterministic.IsProtected, "arbiter-baseline-loop-is-not-protected");
+
+            string savePath = Path.Combine(output, "actions-save.json");
+            DateTime now = DateTime.UtcNow;
+            SaveData seed = SaveData.Fresh(config, now); seed.Energy = 55; seed.Satiety = 25; seed.Mood = 65;
+            seed.Experience = config.Growth.Levels[2].Experience; seed.RewardedLevels = new List<int> { 1, 2, 3 };
+            foreach (Food item in config.Foods) seed.Inventory[item.Id] = 4;
+            SaveStore store = new SaveStore(savePath); store.Write(seed);
+            GameEngine engine = new GameEngine(config, store, now);
+            PetWindow pet = new PetWindow(engine, sprites, false) { Opacity = 0 };
+            app.MainWindow = pet; pet.Show(); pet.UpdateLayout();
+            Dashboard home = new Dashboard(pet);
+            Render(home.PreviewRoot, 610, 690, Path.Combine(output, "actions-home.png")); home.Close();
+
+            int stage = -1;
+            string expected = null;
+            List<int> seen = new List<int>();
+            bool heldLast = false, effectCaptured = false;
+            DateTime began = now, wholeBegan = now;
+            ActiveRest savedRest = null;
+            int sleepExperience = 0, sleepCoins = 0, sleepInventory = 0;
+            Food food = config.Foods[0];
+            DispatcherTimer observe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(35) };
+            Action finish = delegate {
+                observe.Stop();
+                bool passed = !results.Exists(line => line.StartsWith("FAIL", StringComparison.Ordinal));
+                results.Add("RESULT " + (passed ? "PASS" : "FAIL"));
+                File.WriteAllLines(Path.Combine(output, "actions-playback.txt"), results, new System.Text.UTF8Encoding(false));
+                pet.Shutdown(); pet.Close(); app.Shutdown(passed ? 0 : 1);
+            };
+            Action<int> beginStage = delegate(int next) {
+                stage = next; began = DateTime.UtcNow; seen.Clear(); heldLast = false; effectCaptured = false;
+                if (stage == 0 || stage == 1)
+                {
+                    expected = stage == 0 ? "touchHead" : "touchBody";
+                    string part = stage == 0 ? "head" : "body";
+                    ActionResult accepted = pet.TouchPart(part);
+                    check(accepted.Ok && pet.CurrentAnimation == expected && pet.ReactionBusy, part + "-accepted-and-protected");
+                }
+                else if (stage == 2)
+                {
+                    expected = food.Animation;
+                    ActionResult accepted = pet.Feed(food.Id);
+                    check(accepted.Ok && pet.CurrentAnimation == expected && pet.ReactionBusy, "food-accepted-and-protected");
+                    int items = engine.State.Inventory[food.Id], xp = engine.State.Experience, coins = engine.State.Coins;
+                    DateTime lastTouch = engine.State.LastTouchUtc;
+                    ActionResult touch = pet.TouchPart("head");
+                    check(!touch.Ok && engine.State.Experience == xp && engine.State.LastTouchUtc == lastTouch && pet.CurrentAnimation == expected, "eating-rejects-touch-before-reward");
+                    ActionResult duplicate = pet.Feed(food.Id);
+                    check(!duplicate.Ok && engine.State.Inventory[food.Id] == items && engine.State.Experience == xp && pet.CurrentAnimation == expected, "eating-rejects-duplicate-feed-before-consumption");
+                    ActionResult work = pet.StartWork(config.Jobs[0].Id);
+                    check(!work.Ok && engine.State.Work == null && engine.State.Inventory[food.Id] == items && engine.State.Coins == coins && pet.CurrentAnimation == expected, "eating-rejects-work-before-state-change");
+                    ActionResult rest = pet.StartRestAction();
+                    check(!rest.Ok && !engine.IsResting && engine.State.Experience == xp && engine.State.Inventory[food.Id] == items && pet.CurrentAnimation == expected, "eating-rejects-rest-before-state-change");
+                }
+                else if (stage == 3 || stage == 4)
+                {
+                    string part = stage == 3 ? "halo" : "wheels";
+                    ActionResult accepted = pet.TouchPart(part); expected = pet.CurrentAnimation;
+                    check(accepted.Ok && (stage == 3 ? pet.HaloEffectActive : pet.WheelEffectActive), part + "-effect-triggered");
+                }
+                else if (stage == 5)
+                {
+                    expected = config.Rest.Animation;
+                    ActionResult accepted = pet.StartRestAction();
+                    check(accepted.Ok && engine.IsResting && pet.CurrentAnimation == expected && !pet.ReactionBusy, "sleep-starts-loop-and-preserves-state");
+                    sleepExperience = engine.State.Experience; sleepCoins = engine.State.Coins; sleepInventory = engine.State.Inventory[food.Id];
+                    ActionResult touched = pet.TouchPart("head");
+                    check(!touched.Ok && engine.State.Experience == sleepExperience && engine.IsResting && pet.CurrentAnimation == expected, "sleep-touch-does-not-wake-or-reward");
+                    ActionResult fed = pet.Feed(food.Id);
+                    check(!fed.Ok && engine.State.Inventory[food.Id] == sleepInventory && engine.IsResting && pet.CurrentAnimation == expected, "sleep-feed-does-not-consume-or-interrupt");
+                }
+                else if (stage == 6)
+                {
+                    savedRest = engine.State.Rest;
+                    pet.Shutdown(); pet.Close();
+                    engine = new GameEngine(config, new SaveStore(savePath), DateTime.UtcNow);
+                    pet = new PetWindow(engine, sprites, false) { Opacity = 0 };
+                    app.MainWindow = pet; pet.Show(); pet.UpdateLayout();
+                    expected = config.Rest.Animation;
+                    pet.Feedback(new ActionResult(true, "右键打开养成小屋，陪我一起玩吧！", "wave"));
+                    bool snapshot = engine.IsResting && Math.Abs((engine.State.Rest.StartedUtc - savedRest.StartedUtc).TotalMilliseconds) < 1
+                        && Math.Abs((engine.State.Rest.EndsUtc - savedRest.EndsUtc).TotalMilliseconds) < 1;
+                    check(snapshot && pet.CurrentAnimation == expected && !pet.ReactionBusy, "restart-restores-sleep-baseline-without-greeting-interruption");
+                    check(engine.State.Experience == sleepExperience && engine.State.Coins == sleepCoins && engine.State.Inventory[food.Id] == sleepInventory, "restart-preserves-sleep-game-progress");
+                    Dashboard sleepingHome = new Dashboard(pet);
+                    Render(sleepingHome.PreviewRoot, 610, 690, Path.Combine(output, "sleep-home.png")); sleepingHome.Close();
+                }
+                else if (stage == 7)
+                {
+                    expected = "wave";
+                    ActionResult awake = pet.WakeAction();
+                    check(awake.Ok && !engine.IsResting && pet.CurrentAnimation == "wave", "explicit-wake-returns-to-greeting");
+                }
+            };
+            observe.Tick += delegate {
+                try
+                {
+                    if ((DateTime.UtcNow - wholeBegan).TotalSeconds > 50)
+                    { check(false, "actions-timeout stage=" + stage); finish(); return; }
+                    if (pet.CurrentAnimation == expected && stage != 3 && stage != 4)
+                    {
+                        int frame = pet.CurrentFrameIndex;
+                        if (!seen.Contains(frame))
+                        {
+                            seen.Add(frame);
+                            Render(pet.Surface, (int)pet.Width, (int)pet.Height, Path.Combine(output,
+                                "stage-" + stage + "-" + expected + "-" + frame.ToString("00") + ".png"));
+                        }
+                        AnimationSpec spec = config.Animations[expected];
+                        if (spec.Loop == false && pet.AnimationElapsedMilliseconds >= spec.FrameMs * sprites.Animations[expected].Length)
+                            heldLast = frame == sprites.Animations[expected].Length - 1;
+                    }
+                    if (stage >= 0 && stage <= 2)
+                    {
+                        AnimationSpec spec = config.Animations[expected];
+                        double timeout = Math.Max(spec.DurationMs, spec.FrameMs * sprites.Animations[expected].Length) + 5000;
+                        if (pet.CurrentAnimation == expected && (DateTime.UtcNow - began).TotalMilliseconds < timeout) return;
+                        bool frameOrder = seen.Count == sprites.Animations[expected].Length;
+                        for (int i = 0; i < seen.Count; i++) if (seen[i] != i) frameOrder = false;
+                        check(frameOrder && heldLast && pet.CurrentAnimation == "idle" && !pet.ReactionBusy,
+                            expected + "-ordered-complete-playback frames=" + String.Join(",", seen) + " heldLast=" + heldLast + " returnedToIdle=" + (pet.CurrentAnimation == "idle"));
+                        beginStage(stage + 1);
+                    }
+                    else if (stage == 3 || stage == 4)
+                    {
+                        bool active = stage == 3 ? pet.HaloEffectActive : pet.WheelEffectActive;
+                        if (active && !effectCaptured && (DateTime.UtcNow - began).TotalMilliseconds >= 400)
+                        {
+                            effectCaptured = true;
+                            Render(pet.Surface, (int)pet.Width, (int)pet.Height,
+                                Path.Combine(output, stage == 3 ? "halo-glow.png" : "wheel-trail.png"));
+                        }
+                        if ((pet.ReactionBusy || active) && (DateTime.UtcNow - began).TotalSeconds < 7) return;
+                        check(effectCaptured && !active && pet.CurrentAnimation == "idle", (stage == 3 ? "halo" : "wheels") + "-effect-captured-and-finishes");
+                        beginStage(stage + 1);
+                    }
+                    else if (stage == 5 || stage == 6)
+                    {
+                        int count = sprites.Animations[expected].Length;
+                        if (seen.Count < count && (DateTime.UtcNow - began).TotalSeconds < 7) return;
+                        bool frameOrder = seen.Count == count;
+                        for (int i = 0; i < seen.Count; i++) if (seen[i] != i) frameOrder = false;
+                        check(frameOrder && engine.IsResting && pet.CurrentAnimation == expected && !pet.ReactionBusy,
+                            (stage == 5 ? "sleep" : "restarted-sleep") + "-all-loop-poses frames=" + String.Join(",", seen));
+                        beginStage(stage + 1);
+                    }
+                    else if (stage == 7)
+                    {
+                        if (pet.ReactionBusy && (DateTime.UtcNow - began).TotalSeconds < 7) return;
+                        check(!engine.IsResting && pet.CurrentAnimation == "idle", "awake-returns-to-idle-after-reaction");
+                        finish();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    check(false, "exception stage=" + stage + " " + ex.Message);
+                    File.WriteAllText(Path.Combine(output, "actions-error.txt"), ex.ToString()); finish();
+                }
+            };
+            beginStage(0); observe.Start(); return app.Run();
         }
     }
 }
