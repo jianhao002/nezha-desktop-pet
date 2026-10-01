@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "sliding-puzzle",
+  "name": "数字华容道",
+  "description": "3×3、4×4、5×5 三种棋盘。点击空格旁的数字，或用方向键移动空格。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.SlidingGame",
+  "sources": ["Game.cs"]
+}

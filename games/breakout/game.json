@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "breakout",
+  "name": "打砖块",
+  "description": "三档速度与砖墙，三次机会。鼠标或方向键控制挡板，空格发球 / 暂停。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.BreakoutGame",
+  "sources": ["Game.cs"]
+}

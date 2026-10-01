@@ -153,7 +153,7 @@ namespace NezhaDesktop
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location) };
             Forms.ContextMenuStrip menu = new Forms.ContextMenuStrip();
             menu.Items.Add("打开养成面板", null, delegate { Dispatcher.Invoke(new Action(OpenDashboard)); });
-            menu.Items.Add("小游戏 · 扫雷 / 贪吃蛇 / 2048", null, delegate { Dispatcher.Invoke(new Action(OpenMiniGames)); });
+            menu.Items.Add("小游戏 · 休闲小窗", null, delegate { Dispatcher.Invoke(new Action(OpenMiniGames)); });
             menu.Items.Add("检查更新", null, delegate { Dispatcher.Invoke(new Action(OpenUpdate)); });
             Forms.ToolStripMenuItem restItem = new Forms.ToolStripMenuItem(Engine.IsResting ? "叫醒哪吒" : "去睡一小会儿");
             restItem.Click += delegate { Dispatcher.Invoke(new Action(delegate { if (Engine.IsResting) WakeAction(); else StartRestAction(); })); };

@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "memory",
+  "name": "记忆翻牌",
+  "description": "莲、火、风、轮成双配对。6、8、12 对三档，切走时翻牌倒计时也会暂停。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.MemoryGame",
+  "sources": ["Game.cs"]
+}

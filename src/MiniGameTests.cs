@@ -56,8 +56,8 @@ namespace NezhaDesktop
                 try { body(); results.Add("PASS " + name); } catch (Exception ex) { results.Add("FAIL " + name + ": " + ex.Message); }
             };
             MiniGameCatalog catalog = new MiniGameCatalog(root, data); List<MiniGameEntry> entries = catalog.Scan();
-            test("three-folder-discovery-without-registration", delegate {
-                Check(entries.Select(e => e.Manifest.Id).OrderBy(s => s).SequenceEqual(new[] { "2048", "minesweeper", "snake" }), "missing bundled games");
+            test("nine-folder-discovery-without-registration", delegate {
+                Check(entries.Select(e => e.Manifest.Id).OrderBy(s => s).SequenceEqual(new[] { "2048", "breakout", "gomoku", "memory", "minesweeper", "sliding-puzzle", "snake", "sudoku", "tetris" }), "missing bundled games");
                 Check(catalog.Errors.Count == 0, String.Join(";", catalog.Errors));
             });
             Dictionary<string, IMiniGame> games = new Dictionary<string, IMiniGame>();
@@ -69,6 +69,7 @@ namespace NezhaDesktop
                     Capture(game.View, 340, 400, Path.Combine(output, chosen.Manifest.Id + ".png"));
                 });
             }
+            ExpandedGameTests.Run(test, games);
             if (games.ContainsKey("minesweeper")) {
                 Assembly plugin = games["minesweeper"].GetType().Assembly;
                 test("mines-five-ui-difficulties-safe-first-click-and-separate-records", delegate {
@@ -220,7 +221,7 @@ namespace NezhaDesktop
             test("invalid-folder-isolated-and-traversal-rejected", delegate {
                 string bad = Path.Combine(root, "games", "bad"); Directory.CreateDirectory(bad);
                 File.WriteAllText(Path.Combine(bad, "game.json"), "{\"apiVersion\":1,\"id\":\"bad\",\"name\":\"bad\",\"entryType\":\"Bad.Game\",\"sources\":[\"../Game.cs\"]}");
-                Check(catalog.Scan().Count == 3 && catalog.Errors.Count == 1, "bad folder broke catalog");
+                Check(catalog.Scan().Count == entries.Count && catalog.Errors.Count == 1, "bad folder broke catalog");
             });
             test("add-a-folder-without-host-rebuild", delegate {
                 string folder = Path.Combine(root, "games", "example"); Directory.CreateDirectory(folder);

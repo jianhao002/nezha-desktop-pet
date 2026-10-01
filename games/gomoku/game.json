@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "gomoku",
+  "name": "五子棋",
+  "description": "与电脑轮流落子，连成五子即胜。三种棋盘、三档对手，采用无禁手规则。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.GomokuGame",
+  "sources": ["Game.cs"]
+}
