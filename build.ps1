@@ -1,4 +1,4 @@
-﻿param([string]$OutputDirectory)
+﻿﻿param([string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $petVersion = (Get-Content -LiteralPath (Join-Path $petProjectRoot 'config.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
@@ -27,10 +27,17 @@ $petHelperSources = @(Get-ChildItem -LiteralPath (Join-Path $petProjectRoot 'upd
 if (-not (Test-Path -LiteralPath $petUpdateCore) -or $petHelperSources.Count -eq 0) { throw '缺少更新核心或更新助手源码。' }
 if (-not (Test-Path -LiteralPath (Join-Path $petProjectRoot 'update-settings.json'))) { throw '缺少 update-settings.json。' }
 New-Item -ItemType Directory -Path $petBuildOutput -Force | Out-Null
-$petReferences = @('System.dll', 'System.Core.dll', 'System.Web.Extensions.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll', 'System.Xaml.dll', 'System.Security.dll', 'System.IO.Compression.dll', 'System.IO.Compression.FileSystem.dll', 'WPF\WindowsBase.dll', 'WPF\PresentationCore.dll', 'WPF\PresentationFramework.dll')
+$petReferences = @('System.dll', 'System.Core.dll', 'System.Web.Extensions.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll', 'System.Xaml.dll', 'Microsoft.CSharp.dll', 'System.Security.dll', 'System.IO.Compression.dll', 'System.IO.Compression.FileSystem.dll', 'WPF\WindowsBase.dll', 'WPF\PresentationCore.dll', 'WPF\PresentationFramework.dll')
 function Invoke-PetCompiler([string]$Name, [string[]]$Sources) {
     $petCompileArgs = @('/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output', '/codepage:65001', ('/out:' + (Join-Path $petBuildOutput $Name)), ('/win32manifest:' + (Join-Path $petProjectRoot 'app.manifest')), ('/win32icon:' + (Join-Path $petProjectRoot 'assets\pet.ico')))
     foreach ($petReference in $petReferences) { $petCompileArgs += ('/reference:' + (Join-Path $petFramework $petReference)) }
+    if ($Name -eq 'NezhaPet.exe') {
+        foreach ($petGameFolder in (Get-ChildItem -LiteralPath (Join-Path $petProjectRoot 'games') -Directory | Sort-Object Name)) {
+            foreach ($petGameFile in (Get-ChildItem -LiteralPath $petGameFolder.FullName -File | Where-Object { $_.Name -eq 'game.json' -or $_.Extension -eq '.cs' } | Sort-Object Name)) {
+                $petCompileArgs += ('/resource:' + $petGameFile.FullName + ',Nezha.MiniGames.' + $petGameFolder.Name + '.' + $petGameFile.Name)
+            }
+        }
+    }
     $petCompileArgs += $Sources
     & $petCompiler @petCompileArgs
     if ($LASTEXITCODE -ne 0) { throw ('编译失败：' + $Name) }

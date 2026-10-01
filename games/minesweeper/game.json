@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "minesweeper",
+  "name": "扫雷",
+  "description": "点开安全格，右键插旗。第一步周围没有雷，随时可以暂停。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.MinesweeperGame",
+  "sources": ["Game.cs"]
+}
