@@ -1,4 +1,4 @@
-﻿﻿param([string]$RuntimeDirectory, [string]$ReportDirectory)
+﻿param([string]$RuntimeDirectory, [string]$ReportDirectory)
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 if ([string]::IsNullOrWhiteSpace($RuntimeDirectory)) {

@@ -1,4 +1,4 @@
-﻿﻿param([string]$OutputDirectory)
+﻿param([string]$OutputDirectory)
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath($PSScriptRoot)
 $petVersion = (Get-Content -LiteralPath (Join-Path $petProjectRoot 'config.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
