@@ -76,9 +76,25 @@ namespace NezhaGames
         private void Check(int index) { if (index < 0 || index >= Mines.Length) throw new ArgumentOutOfRangeException("index"); }
     }
 
+    public sealed class MinesDifficulty
+    {
+        public readonly string Name, ScoreKey;
+        public readonly int Size, MineCount;
+        public MinesDifficulty(string name, int size, int mines, string scoreKey)
+        { Name = name; Size = size; MineCount = mines; ScoreKey = scoreKey; }
+        public override string ToString() { return Name + " · " + Size + "×" + Size + " · " + MineCount + "雷"; }
+    }
     public sealed class MinesweeperGame : MiniGameControl
     {
+        public static readonly MinesDifficulty[] Difficulties = {
+            new MinesDifficulty("入门", 6, 4, "best-6-4"),
+            new MinesDifficulty("简单", 9, 10, "best-9"),
+            new MinesDifficulty("普通", 12, 24, "best-12"),
+            new MinesDifficulty("困难", 14, 40, "best-14-40"),
+            new MinesDifficulty("专家", 16, 64, "best-16-64")
+        };
         public MinesBoard Board { get; private set; }
+        public string ScoreKey { get; private set; }
         private readonly Stopwatch clock = new Stopwatch();
         private DispatcherTimer timer;
         private UniformGrid grid;
@@ -92,10 +108,11 @@ namespace NezhaGames
             Grid layout = new Grid();
             foreach (GridLength height in new[] { GridLength.Auto, GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto })
                 layout.RowDefinitions.Add(new RowDefinition { Height = height });
-            DockPanel bar = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
-            difficulty = new ComboBox { Width = 95, Margin = new Thickness(0, 0, 8, 0), ItemsSource = new[] { "9 × 9 · 10 雷", "12 × 12 · 24 雷" }, SelectedIndex = 0 };
+            WrapPanel bar = new WrapPanel { Margin = new Thickness(0, 0, 0, 3) };
+            difficulty = new ComboBox { Width = 138, Margin = new Thickness(0, 0, 8, 5), ItemsSource = Difficulties, SelectedIndex = 1,
+                ToolTip = "选择档位后点新一局；大棋盘可以放大小窗。" };
             bar.Children.Add(difficulty); bar.Children.Add(Ui.Button("新一局", NewGame, false));
-            pause = Ui.Button("暂停", delegate { manualPaused = !manualPaused; ApplyPause(); }, false); pause.Margin = new Thickness(8, 0, 0, 0); bar.Children.Add(pause);
+            pause = Ui.Button("暂停", delegate { manualPaused = !manualPaused; ApplyPause(); }, false); pause.Margin = new Thickness(8, 0, 0, 5); bar.Children.Add(pause);
             layout.Children.Add(bar);
             counter = Ui.Text("", 12, Ui.Muted); counter.Margin = new Thickness(0, 0, 0, 7); Grid.SetRow(counter, 1); layout.Children.Add(counter);
             grid = new UniformGrid(); Viewbox boardBox = new Viewbox { Stretch = Stretch.Uniform, Child = grid, Margin = new Thickness(0, 0, 0, 8) };
@@ -106,8 +123,9 @@ namespace NezhaGames
         }
         private void NewGame()
         {
-            int width = difficulty.SelectedIndex == 1 ? 12 : 9;
-            Board = new MinesBoard(width, width, width == 9 ? 10 : 24, new Random());
+            MinesDifficulty chosen = Difficulties[Math.Max(0, difficulty.SelectedIndex)];
+            int width = chosen.Size; ScoreKey = chosen.ScoreKey;
+            Board = new MinesBoard(width, width, chosen.MineCount, new Random());
             scored = false; manualPaused = false; clock.Reset(); grid.Rows = grid.Columns = width;
             grid.Width = grid.Height = width * 34; grid.Children.Clear(); cells = new Button[width * width];
             for (int i = 0; i < cells.Length; i++)
@@ -120,7 +138,7 @@ namespace NezhaGames
                 cell.MouseDoubleClick += delegate(object sender, MouseButtonEventArgs e) { if (e.ChangedButton == MouseButton.Left) Reveal(index, true); };
                 cells[i] = cell; grid.Children.Add(cell);
             }
-            message.Text = "左键点开 · 右键插旗 · 双击数字快速展开"; Paint(); ApplyPause();
+            message.Text = "左键点开 · 右键插旗 · 双击数字快速展开" + (width >= 14 ? "\n大棋盘建议普通模式或放大小窗" : ""); Paint(); ApplyPause();
         }
         private bool Paused { get { return hostPaused || manualPaused; } }
         private void Reveal(int index, bool chord)
@@ -135,7 +153,7 @@ namespace NezhaGames
                 clock.Stop(); message.Text = "全部排除！哪吒为你鼓掌。";
                 if (!scored) {
                     scored = true;
-                    try { if (Host.Record("best-" + Board.Width, Math.Max(1, (int)Math.Min(Int32.MaxValue, clock.ElapsedMilliseconds)), true)) message.Text += " 新纪录！"; }
+                    try { if (Host.Record(ScoreKey, Math.Max(1, (int)Math.Min(Int32.MaxValue, clock.ElapsedMilliseconds)), true)) message.Text += " 新纪录！"; }
                     catch (Exception ex) { message.Text += " 成绩未保存：" + ex.Message; }
                 }
             }
@@ -156,7 +174,7 @@ namespace NezhaGames
         }
         private void UpdateCounter()
         {
-            int best = Host.Best("best-" + Board.Width, 0);
+            int best = Host.Best(ScoreKey, 0);
             counter.Text = "余雷 " + (Board.MineCount - Board.FlagCount) + "   ·   " + (int)clock.Elapsed.TotalSeconds + " 秒" + (best > 0 ? "   ·   最快 " + (best / 1000.0).ToString("0.0") + " 秒" : "");
         }
         private void ApplyPause()

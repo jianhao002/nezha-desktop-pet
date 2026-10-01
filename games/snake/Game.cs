@@ -57,9 +57,28 @@ namespace NezhaGames
             Food = available[random.Next(available.Count)];
         }
     }
+    public sealed class SnakeSpeed
+    {
+        public readonly string Id, Name;
+        public readonly int Milliseconds;
+        public SnakeSpeed(string id, string name, int milliseconds)
+        { Id = id; Name = name; Milliseconds = milliseconds; }
+        public override string ToString() { return Name; }
+    }
     public sealed class SnakeGame : MiniGameControl
     {
+        public static readonly SnakeSpeed[] Speeds = {
+            new SnakeSpeed("relaxed", "悠闲", 320),
+            new SnakeSpeed("easy", "轻松", 260),
+            new SnakeSpeed("slow", "慢速", 220),
+            new SnakeSpeed("normal", "标准", 150),
+            new SnakeSpeed("fast", "快速", 95),
+            new SnakeSpeed("hard", "困难", 70),
+            new SnakeSpeed("extreme", "极限", 50)
+        };
         public SnakeBoard Board { get; private set; }
+        public string ScoreKey { get; private set; }
+        private string speedName;
         private Canvas canvas;
         private DispatcherTimer timer;
         private TextBlock score, message;
@@ -73,7 +92,7 @@ namespace NezhaGames
                 layout.RowDefinitions.Add(new RowDefinition { Height = height });
             WrapPanel controls = new WrapPanel { Margin = new Thickness(0, 0, 0, 8) };
             mode = new ComboBox { ItemsSource = new[] { "经典", "穿墙" }, SelectedIndex = 0, Width = 64, Margin = new Thickness(0, 0, 6, 5) };
-            speed = new ComboBox { ItemsSource = new[] { "慢速", "标准", "快速" }, SelectedIndex = 1, Width = 64, Margin = new Thickness(0, 0, 6, 5) };
+            speed = new ComboBox { ItemsSource = Speeds, SelectedIndex = 3, Width = 64, Margin = new Thickness(0, 0, 6, 5), ToolTip = "选择速度后点新一局，开始新的挑战。" };
             controls.Children.Add(mode); controls.Children.Add(speed); controls.Children.Add(Ui.Button("新一局", NewGame, false));
             pause = Ui.Button("开始", TogglePause, true); pause.Margin = new Thickness(6, 0, 0, 5); controls.Children.Add(pause); layout.Children.Add(controls);
             score = Ui.Text("", 12, Ui.Muted); Grid.SetRow(score, 1); layout.Children.Add(score);
@@ -90,7 +109,9 @@ namespace NezhaGames
         private void NewGame()
         {
             timer.Stop(); Board = new SnakeBoard(14, mode.SelectedIndex == 1, new Random());
-            timer.Interval = TimeSpan.FromMilliseconds(speed.SelectedIndex == 0 ? 220 : speed.SelectedIndex == 2 ? 95 : 150);
+            SnakeSpeed chosen = Speeds[Math.Max(0, speed.SelectedIndex)]; speedName = chosen.Name;
+            timer.Interval = TimeSpan.FromMilliseconds(chosen.Milliseconds);
+            ScoreKey = (Board.Wrap ? "wrap-" : "classic-") + chosen.Id;
             manualPaused = true; recorded = false; message.Text = "方向键 / WASD · 空格暂停"; ApplyPause(); Paint(); Focus();
         }
         private void TogglePause()
@@ -113,7 +134,7 @@ namespace NezhaGames
             timer.Stop(); message.Text = Board.Won ? "把棋盘都填满了，太厉害啦！" : "这一局结束，按空格再来。";
             if (!recorded) {
                 recorded = true;
-                try { if (Host.Record(Board.Wrap ? "wrap" : "classic", Board.Score, false)) message.Text += " 新纪录！"; }
+                try { if (Host.Record(ScoreKey, Board.Score, false)) message.Text += " 新纪录！"; }
                 catch (Exception ex) { message.Text += " 成绩未保存：" + ex.Message; }
             }
             pause.Content = "再来";
@@ -127,7 +148,9 @@ namespace NezhaGames
             for (int i = Board.Body.Count - 1; i >= 0; i--) AddCell(Board.Body[i], i == 0 ? Ui.Red : Ui.Color("#608575"), 4);
             int head = Board.Body[0]; Ellipse eye = new Ellipse { Width = 4, Height = 4, Fill = Brushes.White };
             Canvas.SetLeft(eye, (head % Board.Size) * 20 + 10); Canvas.SetTop(eye, (head / Board.Size) * 20 + 5); canvas.Children.Add(eye);
-            score.Text = "本局 " + Board.Score + "   ·   最佳 " + Host.Best(Board.Wrap ? "wrap" : "classic", 0) + (Paused && !Board.Ended ? "   ·   已暂停" : "");
+            int legacy = Host.Best(Board.Wrap ? "wrap" : "classic", 0);
+            score.Text = "本局 " + Board.Score + " · " + speedName + "最佳 " + Host.Best(ScoreKey, 0)
+                + (legacy > 0 ? " · 旧版 " + legacy : "") + (Paused && !Board.Ended ? " · 已暂停" : "");
         }
         private void AddCell(int index, Brush color, double corner)
         {

@@ -38,12 +38,13 @@ namespace NezhaDesktop
             PngBitmapEncoder png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
             using (FileStream stream = new FileStream(path, FileMode.Create)) png.Save(stream);
         }
-        private static IEnumerable<Button> Buttons(DependencyObject root)
+        private static IEnumerable<T> Controls<T>(DependencyObject root) where T : DependencyObject
         {
-            Button button = root as Button; if (button != null) yield return button;
+            T control = root as T; if (control != null) yield return control;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-                foreach (Button child in Buttons(VisualTreeHelper.GetChild(root, i))) yield return child;
+                foreach (T child in Controls<T>(VisualTreeHelper.GetChild(root, i))) yield return child;
         }
+        private static IEnumerable<Button> Buttons(DependencyObject root) { return Controls<Button>(root); }
         public static int Run(Application app, string output, string exampleFolder)
         {
             if (Directory.Exists(output)) throw new IOException("小游戏测试目录必须是新目录。");
@@ -70,6 +71,25 @@ namespace NezhaDesktop
             }
             if (games.ContainsKey("minesweeper")) {
                 Assembly plugin = games["minesweeper"].GetType().Assembly;
+                test("mines-five-ui-difficulties-safe-first-click-and-separate-records", delegate {
+                    IMiniGame game = games["minesweeper"]; ComboBox selector = Controls<ComboBox>(game.View).Single();
+                    Button restart = Buttons(game.View).Single(b => Convert.ToString(b.Content) == "新一局");
+                    Check(selector.Items.Count == 5 && (int)Field(Property(game, "Board"), "Width") == 9, "old default changed");
+                    int[] sizes = { 6, 9, 12, 14, 16 }, mines = { 4, 10, 24, 40, 64 }; HashSet<string> keys = new HashSet<string>();
+                    for (int tier = 0; tier < sizes.Length; tier++) {
+                        selector.SelectedIndex = tier; restart.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        object board = Property(game, "Board");
+                        Check((int)Field(board, "Width") == sizes[tier] && (int)Field(board, "MineCount") == mines[tier], "wrong difficulty board");
+                        string key = (string)Property(game, "ScoreKey"); Check(keys.Add(key), "difficulty records collide");
+                        if (tier == 1 || tier == 2) Check(key == "best-" + sizes[tier], "legacy record key changed");
+                        for (int seed = 0; seed < 20; seed++) {
+                            board = NewBoard(plugin, "MinesBoard", sizes[tier], sizes[tier], mines[tier], new Random(seed));
+                            int first = (sizes[tier] / 2) * sizes[tier] + sizes[tier] / 2; Call(board, "Reveal", first);
+                            Check(((bool[])Field(board, "Mines")).Count(m => m) == mines[tier] && ((int[])Field(board, "Adjacent"))[first] == 0, "tier first click unsafe");
+                            foreach (int neighbor in (IEnumerable<int>)Call(board, "Neighbors", first)) Check(!((bool[])Field(board, "Mines"))[neighbor], "tier neighbor unsafe");
+                        }
+                    }
+                });
                 test("mines-first-click-zero-and-neighbors-safe", delegate {
                     for (int seed = 0; seed < 30; seed++) {
                         object board = NewBoard(plugin, "MinesBoard", 9, 9, 10, new Random(seed)); Call(board, "Reveal", 40);
@@ -101,6 +121,21 @@ namespace NezhaDesktop
             }
             if (games.ContainsKey("snake")) {
                 Assembly plugin = games["snake"].GetType().Assembly;
+                test("snake-seven-ui-speeds-and-fourteen-independent-records", delegate {
+                    IMiniGame game = games["snake"]; List<ComboBox> selectors = Controls<ComboBox>(game.View).ToList();
+                    ComboBox modes = selectors.Single(c => c.Items.Count == 2), speeds = selectors.Single(c => c.Items.Count == 7);
+                    Button restart = Buttons(game.View).Single(b => Convert.ToString(b.Content) == "新一局");
+                    DispatcherTimer timer = (DispatcherTimer)game.GetType().GetField("timer", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(game);
+                    Check(timer.Interval.TotalMilliseconds == 150 && speeds.SelectedIndex == 3, "old default speed changed");
+                    int[] intervals = { 320, 260, 220, 150, 95, 70, 50 }; HashSet<string> keys = new HashSet<string>();
+                    for (int mode = 0; mode < 2; mode++) for (int tier = 0; tier < intervals.Length; tier++) {
+                        modes.SelectedIndex = mode; speeds.SelectedIndex = tier; restart.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        Check(timer.Interval.TotalMilliseconds == intervals[tier] && (bool)Field(Property(game, "Board"), "Wrap") == (mode == 1), "selected speed or mode not applied");
+                        string key = (string)Property(game, "ScoreKey"); Check(keys.Add(key), "mode or speed records collide");
+                        object board = Property(game, "Board"); speeds.SelectedIndex = (tier + 1) % intervals.Length;
+                        Check(Object.ReferenceEquals(board, Property(game, "Board")) && timer.Interval.TotalMilliseconds == intervals[tier] && key == (string)Property(game, "ScoreKey"), "selection changed a running game's record key");
+                    }
+                });
                 test("snake-reversal-and-two-turn-burst-rejected", delegate {
                     object board = NewBoard(plugin, "SnakeBoard", 5, false, new ZeroRandom());
                     Check(!(bool)Call(board, "Turn", -1, 0), "reverse accepted");
@@ -165,6 +200,23 @@ namespace NezhaDesktop
                 Check(loaded.Best("high", 0) == 10 && loaded.Best("low", 0) == 80, "record not persisted");
                 Reject(delegate { context.Record("../save", 1, false); });
             });
+            test("expanded-difficulty-reads-legacy-records-without-overwriting-them", delegate {
+                string records = Path.Combine(output, "compatibility-data");
+                MiniGameContext mines = new MiniGameContext(root, Path.Combine(records, "scores", "minesweeper"), null, null);
+                mines.Record("best-9", 1234, true); mines.Record("best-12", 2345, true);
+                MiniGameContext snakeRecords = new MiniGameContext(root, Path.Combine(records, "scores", "snake"), null, null);
+                snakeRecords.Record("classic", 75, false); snakeRecords.Record("classic-normal", 20, false); snakeRecords.Record("classic-extreme", 40, false);
+                MiniGameCatalog compatible = new MiniGameCatalog(root, records);
+                using (IMiniGame game = compatible.Create(entries.Single(e => e.Manifest.Id == "minesweeper"), null, null)) {
+                    Capture(game.View, 340, 400, Path.Combine(output, "legacy-mines.png"));
+                    Check(Controls<TextBlock>(game.View).Any(t => t.Text.Contains("最快 1.2 秒")), "old mines record disappeared");
+                }
+                using (IMiniGame game = compatible.Create(entries.Single(e => e.Manifest.Id == "snake"), null, null)) {
+                    Capture(game.View, 340, 400, Path.Combine(output, "legacy-snake.png"));
+                    Check(Controls<TextBlock>(game.View).Any(t => t.Text.Contains("标准最佳 20") && t.Text.Contains("旧版 75")), "snake records mixed or lost");
+                }
+                Check(snakeRecords.Best("classic", 0) == 75 && snakeRecords.Best("classic-normal", 0) == 20 && snakeRecords.Best("classic-extreme", 0) == 40, "legacy record overwritten");
+            });
             test("invalid-folder-isolated-and-traversal-rejected", delegate {
                 string bad = Path.Combine(root, "games", "bad"); Directory.CreateDirectory(bad);
                 File.WriteAllText(Path.Combine(bad, "game.json"), "{\"apiVersion\":1,\"id\":\"bad\",\"name\":\"bad\",\"entryType\":\"Bad.Game\",\"sources\":[\"../Game.cs\"]}");
@@ -213,6 +265,14 @@ namespace NezhaDesktop
                         int height = width == 310 ? 465 : width == 380 ? 550 : 650;
                         window.Width = width; window.Height = height; window.UpdateLayout();
                         Capture(window.PreviewRoot, width, height, Path.Combine(output, entry.Manifest.Id + "-" + width + ".png"));
+                    }
+                    if (entry.Manifest.Id == "minesweeper") {
+                        Controls<ComboBox>(window.ActiveGame.View).Single().SelectedIndex = 4;
+                        Buttons(window.ActiveGame.View).Single(b => Convert.ToString(b.Content) == "新一局").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                        foreach (int width in new[] { 310, 470 }) {
+                            int height = width == 310 ? 465 : 650; window.Width = width; window.Height = height; window.UpdateLayout();
+                            Capture(window.PreviewRoot, width, height, Path.Combine(output, "mines-expert-" + width + ".png"));
+                        }
                     }
                 }
             });
