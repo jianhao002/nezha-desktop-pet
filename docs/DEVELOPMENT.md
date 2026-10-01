@@ -4,12 +4,21 @@
 
 开发目录保存“怎么制作哪吒”，GitLab 保存开发目录的历史，运行目录保存“哪吒程序与这台电脑的游戏进度”。这就像 Java 项目：源码是 `src`，编译产物是 `target` 里的 jar，用户使用的是部署后的 jar。
 
-当前家庭电脑开发目录：`F:\nezha-desktop-pet-dev`。它有自己的 Git 仓库，提交范围只覆盖本项目。用户要求开发路径不放在 C 盘；其他开发电脑选择自己的非系统盘目录。
+当前家庭电脑使用固定父目录 `F:\nezha-desktop-pet`。源码目录为 `F:\nezha-desktop-pet\source`，有自己的 Git 仓库，提交范围只覆盖本项目。用户要求开发路径不放在 C 盘；其他开发电脑选择自己的非系统盘目录。
+
+```text
+F:\nezha-desktop-pet\
+  source\                 源码、Git；构建在 dist，验证报告在 qa
+  preview\                固定的日常试玩目录，包含本机设置与存档
+  archive\preview-0.5.0\  已保留的旧试玩版，需要回退时使用
+```
+
+以后继续在 `source` 开发、在 `preview` 试玩，不为每次小改动增加一个运行文件夹。`dist` 中带版本号的发布产物和 `qa` 中独立测试目录仍保留原有结构。
 
 在 PowerShell 中进入开发目录：
 
 ```powershell
-Set-Location -LiteralPath 'F:\nezha-desktop-pet-dev'
+Set-Location -LiteralPath 'F:\nezha-desktop-pet\source'
 ```
 
 ## 源码链路
@@ -42,7 +51,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test.ps1
 
 测试用新的 `qa/run-*` 目录，检查养成规则、窗口、动作帧、更新规则、小游戏和扩展示例，不会使用正式存档。窗口检查通过隐藏进程运行。
 
-5. 需要手动试玩时，把发布产物复制到另一个可写目录再运行。关闭试玩程序以后再编译。
+5. 需要手动试玩时，先退出 `preview` 中正在运行的程序，再把验证后的程序、配置和素材更新到这个固定目录。保留其中的 `data`、`games` 和 `.update`，不把整个运行目录清空，也不从旧测试目录覆盖个人存档。内置小游戏会通过现有机制更新未改过的文件；自定义游戏保留。需要回退时才在 `archive` 备份旧版。构建本身仍在源码的 `dist` 内执行，与试玩存档分开。
 
 ## Git 日常操作
 

@@ -100,8 +100,8 @@
 只验证小游戏与示例：
 
 ```powershell
-Set-Location -LiteralPath 'F:\nezha-desktop-pet-dev'
-.\dist\nezha-desktop-v0.5.1\NezhaPet.exe --minigame-test 'F:\nezha-desktop-pet-dev\qa\my-new-test' 'F:\nezha-desktop-pet-dev\examples\my-game'
+Set-Location -LiteralPath 'F:\nezha-desktop-pet\source'
+.\dist\nezha-desktop-v0.5.1\NezhaPet.exe --minigame-test 'F:\nezha-desktop-pet\source\qa\my-new-test' 'F:\nezha-desktop-pet\source\examples\my-game'
 ```
 
 报告目录必须尚不存在。省略最后一个示例路径也可以只验证内置游戏与临时扩展。多显示器、其他电脑的显示缩放和全局快捷键占用仍需目标电脑实机试玩。
