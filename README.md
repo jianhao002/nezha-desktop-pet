@@ -4,6 +4,8 @@
 
 个人公开仓库：[hddhhyhy/nezha-desktop-pet](https://jihulab.com/hddhhyhy/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE.md)。
 
+跨电脑接续开发见 [项目背景与交接](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/PROJECT_CONTEXT.md)。源码仓库根目录的 `AGENTS.md` 引导 Codex 阅读共享背景；开发结束后同步关键决定、验证和未完成事项。
+
 0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/ROADMAP.md)。
 
 请使用 0.4.1：它修复了不同 Windows PowerShell / .NET 版本生成 ZIP 路径分隔符不一致的问题。0.4.0 的更新包会被桌宠校验拒绝；0.4.1 使用标准 ZIP 路径，并在上传前用真实更新代码检查最终压缩包。功能与存档规则沿用 0.4.0。
