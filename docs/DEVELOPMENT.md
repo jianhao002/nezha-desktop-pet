@@ -2,7 +2,7 @@
 
 ## 先分清三个地方
 
-开发目录保存“怎么制作哪吒”，GitLab 保存开发目录的历史，运行目录保存“哪吒程序与这台电脑的游戏进度”。这就像 Java 项目：源码是 `src`，编译产物是 `target` 里的 jar，用户使用的是部署后的 jar。
+开发目录保存“怎么制作哪吒”，GitHub 保存开发目录的历史，运行目录保存“哪吒程序与这台电脑的游戏进度”。这就像 Java 项目：源码是 `src`，编译产物是 `target` 里的 jar，用户使用的是部署后的 jar。
 
 当前家庭电脑使用固定父目录 `F:\nezha-desktop-pet`。源码目录为 `F:\nezha-desktop-pet\source`，有自己的 Git 仓库，提交范围只覆盖本项目。用户要求开发路径不放在 C 盘；其他开发电脑选择自己的非系统盘目录。
 
@@ -77,9 +77,11 @@ git commit -m "Add a new pet action"
 ## 换开发电脑
 
 ```powershell
-git clone https://jihulab.com/hddhhyhy/nezha-desktop-pet.git
+git clone https://github.com/jianhao002/nezha-desktop-pet.git
 Set-Location -LiteralPath '.\nezha-desktop-pet'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
 换运行电脑不需要克隆源码：关闭桌宠，复制完整运行目录，包括自己的 `data`，再双击 exe。当前目标平台为 Windows 10 / 11；不同缩放比例和多显示器需要在目标电脑实际检查。
+
+已有家庭源码检出迁到 GitHub 时，不重新创建开发目录，也不覆盖未提交工作。按 [GitHub 迁移说明](GITHUB_MIGRATION.md) 修改 origin、获取远端，再接续相同分支。

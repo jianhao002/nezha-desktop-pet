@@ -18,7 +18,8 @@
 - C# / WPF / .NET Framework；用 `build.ps1` 和现有 `scripts` 编译、验证。现有结构不要求 Python、Node.js、Git 或数据库作为桌宠运行依赖。
 - `Core.cs` 负责规则和存档；界面通过规则层执行操作。保留现有食物/工作 ID、奖励快照、重复操作保护，以及存档迁移与失败回滚。
 - 修改动作时保留完整播放和动作占用检查，避免先扣物品或发奖励再丢失动画。
-- 更新按钮下载 GitLab Package Registry 的正式发布包。源码提交、程序发布、每台电脑的存档是不同的事。
+- 当前个人仓库是 `https://github.com/jianhao002/nezha-desktop-pet`。账号中的 `renxingshiyan` 是独立项目，哪吒开发和发布只操作本仓库。
+- 更新按钮下载 GitHub Releases 的正式发布包。源码提交、程序发布、每台电脑的存档是不同的事。旧极狐版本第一次迁移需手动安装完整新版；不能只替换更新设置或让旧包暗中更换仓库。
 - 小游戏通过 `games/<id>/game.json` 与独立 C# 源文件接入，接口与生命周期见 `docs/MINI_GAMES.md`。保留隐藏/失焦暂停与退出清理；新增内置游戏保持旧版更新 ZIP 白名单兼容。
 
 ## 验证与发布

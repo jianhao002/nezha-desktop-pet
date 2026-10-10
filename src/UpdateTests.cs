@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NezhaDesktop
 {
-    // Local fixtures only. These tests never call the real GitLab update source.
+    // Local fixtures only. These tests never call a real update source.
     public static class UpdateTests
     {
         public static int Run(string root, string output)
@@ -22,6 +22,75 @@ namespace NezhaDesktop
                 catch (Exception ex) { failures++; results.Add("FAIL " + name + ": " + ex.Message); }
             };
             UpdateSettings settings = new UpdateSettings { Host = "https://jihulab.com", ProjectId = 375689, ProjectPath = "personal-fixture/nezha-desktop-pet", PackageName = "nezha-desktop-pet", Channel = "latest" };
+            UpdateSettings github = new UpdateSettings { Host = "https://github.com", ProjectPath = "personal-fixture/nezha-desktop-pet", PackageName = "nezha-desktop-pet", Channel = "latest" };
+
+            test("github-release-urls-bind-owner-repo-and-version", delegate {
+                github.Validate();
+                Check(github.ManifestUri.AbsoluteUri == "https://github.com/personal-fixture/nezha-desktop-pet/releases/latest/download/update.json", "GitHub 最新清单地址错误");
+                Check(github.PackageUri("0.6.1").AbsoluteUri == "https://github.com/personal-fixture/nezha-desktop-pet/releases/download/v0.6.1/nezha-desktop-pet-0.6.1.zip", "GitHub 版本包地址错误");
+                Reject(delegate { new UpdateSettings { Host = github.Host, ProjectPath = "owner/group/repo", PackageName = github.PackageName, Channel = github.Channel }.Validate(); }, "接受了 GitHub 多层项目路径");
+            });
+            test("github-manifest-rejects-another-repo-version-or-cdn-url", delegate {
+                UpdateManifest manifest = Manifest(github, "0.6.1", new string('a', 64), 32);
+                UpdateClient.ValidateManifest(github, manifest);
+                foreach (string badUrl in new[] {
+                    github.PackageUri("0.6.0").AbsoluteUri,
+                    github.PackageUri("0.6.1").AbsoluteUri.Replace("personal-fixture", "another-owner"),
+                    github.PackageUri("0.6.1").AbsoluteUri + "?token=fixture",
+                    "https://release-assets.githubusercontent.com/fixture/asset.zip",
+                    "https://github.com/personal-fixture/nezha-desktop-pet/releases/latest/download/nezha-desktop-pet-0.6.1.zip" }) {
+                    manifest.PackageUrl = badUrl;
+                    Reject(delegate { UpdateClient.ValidateManifest(github, manifest); }, "接受了未固定到仓库和版本的 GitHub 包地址");
+                }
+            });
+            test("github-redirect-allows-only-official-https-cdn", delegate {
+                UpdateClient.ValidateDownloadUri(github, github.ManifestUri, false);
+                UpdateClient.ValidateDownloadUri(github, github.PackageUri("0.6.1"), true);
+                foreach (string host in new[] { "release-assets.githubusercontent.com", "objects.githubusercontent.com" }) {
+                    Uri asset = new Uri("https://" + host + "/fixture.zip?signature=fixture");
+                    UpdateClient.ValidateDownloadUri(github, asset, true);
+                    Reject(delegate { UpdateClient.ValidateDownloadUri(github, asset, false); }, "接受了清单直接指定 CDN 地址");
+                }
+                foreach (string badUrl in new[] {
+                    "http://release-assets.githubusercontent.com/x.zip", "https://evil.example/x.zip",
+                    "https://release-assets.githubusercontent.com.evil.example/x.zip", "https://127.0.0.1/x.zip",
+                    "https://user:password@github.com/personal-fixture/nezha-desktop-pet/releases/x.zip",
+                    "https://github.com:444/personal-fixture/nezha-desktop-pet/releases/x.zip",
+                    "https://github.com/another-owner/nezha-desktop-pet/releases/x.zip",
+                    "https://github.com/personal-fixture/nezha-desktop-pet/releases/x.zip?token=fixture",
+                    "https://objects.githubusercontent.com/x.zip#fragment" })
+                    Reject(delegate { UpdateClient.ValidateDownloadUri(github, new Uri(badUrl), true); }, "接受了不安全跳转");
+                Reject(delegate { UpdateClient.ValidateDownloadUri(settings, new Uri("https://objects.githubusercontent.com/x.zip"), true); }, "极狐来源接受了 GitHub CDN 跳转");
+            });
+            test("github-preparation-preserves-save-and-verifies-package", delegate {
+                string install = Folder(output, "github-package");
+                File.WriteAllText(Path.Combine(install, "update-settings.json"), UpdateSafety.WriteJson(github));
+                string save = SeedProtectedFiles(install), before = UpdateSafety.FileHash(save);
+                string archive = MakeArchive(install, "github.zip", PackageEntries(github, "0.6.1"));
+                UpdateCheck check = new UpdateCheck { CurrentVersion = "0.6.0", Available = true,
+                    Manifest = Manifest(github, "0.6.1", UpdateSafety.FileHash(archive), new FileInfo(archive).Length) };
+                PreparedUpdate prepared = new UpdateClient(install).PrepareFile(archive, check, null);
+                Check(prepared.TargetVersion == "0.6.1" && UpdateSafety.FileHash(save) == before, "GitHub 包准备失败或改变存档");
+            });
+            test("github-package-cannot-switch-repository", delegate {
+                string install = Folder(output, "github-repository-change");
+                File.WriteAllText(Path.Combine(install, "update-settings.json"), UpdateSafety.WriteJson(github));
+                UpdateSettings changed = new UpdateSettings { Host = github.Host, ProjectPath = "another-owner/nezha-desktop-pet", PackageName = github.PackageName, Channel = github.Channel };
+                string archive = MakeArchive(install, "changed.zip", PackageEntries(changed, "0.6.1"));
+                UpdateCheck check = new UpdateCheck { CurrentVersion = "0.6.0", Available = true,
+                    Manifest = Manifest(github, "0.6.1", UpdateSafety.FileHash(archive), new FileInfo(archive).Length) };
+                Reject(delegate { new UpdateClient(install).PrepareFile(archive, check, null); }, "GitHub 包改变了更新仓库");
+            });
+            test("legacy-installation-requires-manual-github-migration", delegate {
+                string install = Folder(output, "legacy-to-github");
+                File.WriteAllText(Path.Combine(install, "update-settings.json"), UpdateSafety.WriteJson(settings));
+                string save = SeedProtectedFiles(install), before = UpdateSafety.FileHash(save);
+                string archive = MakeArchive(install, "migration.zip", PackageEntries(github, "0.6.1"));
+                UpdateCheck check = new UpdateCheck { CurrentVersion = "0.4.1", Available = true,
+                    Manifest = Manifest(settings, "0.6.1", UpdateSafety.FileHash(archive), new FileInfo(archive).Length) };
+                Reject(delegate { new UpdateClient(install).PrepareFile(archive, check, null); }, "旧来源允许更新包暗中改变仓库");
+                Check(UpdateSafety.FileHash(save) == before, "拒绝来源变化时改变了存档");
+            });
 
             test("strict-version-and-numeric-order", delegate {
                 Check(UpdateSafety.ParseVersion("0.10.0") > UpdateSafety.ParseVersion("0.9.9"), "版本必须按数字比较");

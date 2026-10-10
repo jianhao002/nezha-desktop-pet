@@ -33,25 +33,45 @@ namespace NezhaDesktop
         }
         public void Validate()
         {
-            if (!String.Equals(Host, "https://jihulab.com", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("更新源必须是 https://jihulab.com。");
-            if (ProjectId <= 0) throw new InvalidDataException("更新项目编号无效，请下载完整新版发布包。");
+            bool github = String.Equals(Host, "https://github.com", StringComparison.OrdinalIgnoreCase);
+            if (!github && !String.Equals(Host, "https://jihulab.com", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("更新源必须是 GitHub 或极狐 GitLab 的 HTTPS 地址。");
+            if (!github && ProjectId <= 0) throw new InvalidDataException("更新项目编号无效，请下载完整新版发布包。");
             if (String.IsNullOrWhiteSpace(ProjectPath) || ProjectPath.Length > 200 ||
                 !Regex.IsMatch(ProjectPath, @"^[A-Za-z0-9_-][A-Za-z0-9_.-]*(/[A-Za-z0-9_-][A-Za-z0-9_.-]*)+$"))
                 throw new InvalidDataException("更新项目路径无效。");
             if (ProjectPath.Split('/').Any(x => x == "." || x == ".." || x.EndsWith(".")))
                 throw new InvalidDataException("更新项目路径无效。");
+            if (github && ProjectPath.Split('/').Length != 2)
+                throw new InvalidDataException("GitHub 更新项目必须使用 用户名/仓库名。");
             if (PackageName != "nezha-desktop-pet" || Channel != "latest")
                 throw new InvalidDataException("更新发布通道无效。");
         }
+        [ScriptIgnore]
         public string GenericBaseUrl
         {
-            get { Validate(); return Host.ToLowerInvariant() + "/api/v4/projects/" + ProjectId.ToString(CultureInfo.InvariantCulture) + "/packages/generic/" + PackageName + "/"; }
+            get {
+                Validate();
+                if (Host.Equals("https://github.com", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("GitHub 更新使用 Releases 发布页。");
+                return Host.ToLowerInvariant() + "/api/v4/projects/" + ProjectId.ToString(CultureInfo.InvariantCulture) + "/packages/generic/" + PackageName + "/";
+            }
         }
-        public Uri ManifestUri { get { return new Uri(GenericBaseUrl + Channel + "/update.json"); } }
+        [ScriptIgnore]
+        public Uri ManifestUri {
+            get {
+                Validate();
+                return Host.Equals("https://github.com", StringComparison.OrdinalIgnoreCase)
+                    ? new Uri("https://github.com/" + ProjectPath + "/releases/latest/download/update.json")
+                    : new Uri(GenericBaseUrl + Channel + "/update.json");
+            }
+        }
         public Uri PackageUri(string version)
         {
+            Validate();
             UpdateSafety.ParseVersion(version);
+            if (Host.Equals("https://github.com", StringComparison.OrdinalIgnoreCase))
+                return new Uri("https://github.com/" + ProjectPath + "/releases/download/v" + version + "/nezha-desktop-pet-" + version + ".zip");
             return new Uri(GenericBaseUrl + version + "/nezha-desktop-pet-" + version + ".zip");
         }
     }
@@ -201,10 +221,9 @@ namespace NezhaDesktop
                 !String.Equals(source.AbsoluteUri, settings.PackageUri(manifest.Version).AbsoluteUri, StringComparison.Ordinal))
                 throw new InvalidDataException("发布包地址不属于当前仓库的正式版本目录。");
         }
-        private static byte[] DownloadBytes(Uri uri, int maximum)
+        private byte[] DownloadBytes(Uri uri, int maximum)
         {
-            HttpWebRequest request = CreateRequest(uri);
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            using (HttpWebResponse response = OpenResponse(uri))
             {
                 CheckResponse(response, maximum);
                 using (Stream input = response.GetResponseStream())
@@ -220,10 +239,9 @@ namespace NezhaDesktop
                 }
             }
         }
-        private static void DownloadFile(Uri uri, string destination, long size, Action<int, string> progress)
+        private void DownloadFile(Uri uri, string destination, long size, Action<int, string> progress)
         {
-            HttpWebRequest request = CreateRequest(uri);
-            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            using (HttpWebResponse response = OpenResponse(uri))
             {
                 CheckResponse(response, size);
                 if (response.ContentLength >= 0 && response.ContentLength != size)
@@ -247,15 +265,60 @@ namespace NezhaDesktop
                 }
             }
         }
+        // GitHub assets redirect to a signed CDN URL. Validate every hop and never
+        // send credentials; the manifest still binds the initial URL to this repo/version.
+        internal static void ValidateDownloadUri(UpdateSettings settings, Uri uri, bool redirected)
+        {
+            settings.Validate();
+            if (uri == null || !uri.IsAbsoluteUri || uri.Scheme != "https" || !uri.IsDefaultPort ||
+                uri.UserInfo.Length != 0 || uri.Fragment.Length != 0)
+                throw new InvalidDataException("更新下载地址不安全。");
+            bool github = settings.Host.Equals("https://github.com", StringComparison.OrdinalIgnoreCase);
+            if (!github) {
+                if (redirected || uri.Host != "jihulab.com" || uri.Query.Length != 0 ||
+                    !uri.AbsoluteUri.StartsWith(settings.GenericBaseUrl, StringComparison.Ordinal))
+                    throw new InvalidDataException("极狐更新地址不属于当前仓库。");
+                return;
+            }
+            if (uri.Host == "github.com" && uri.Query.Length == 0 &&
+                uri.AbsolutePath.StartsWith("/" + settings.ProjectPath + "/releases/", StringComparison.Ordinal)) return;
+            if (redirected && (uri.Host == "release-assets.githubusercontent.com" || uri.Host == "objects.githubusercontent.com")) return;
+            throw new InvalidDataException("更新跳转不属于当前 GitHub 仓库或官方文件下载域名。");
+        }
+        private HttpWebResponse OpenResponse(Uri uri)
+        {
+            for (int hop = 0; hop <= 5; hop++) {
+                ValidateDownloadUri(settings, uri, hop > 0);
+                HttpWebResponse response;
+                try { response = (HttpWebResponse)CreateRequest(uri).GetResponse(); }
+                catch (WebException ex) {
+                    HttpWebResponse failure = ex.Response as HttpWebResponse;
+                    if (failure != null) {
+                        int code = (int)failure.StatusCode; failure.Close();
+                        throw new IOException("更新源暂时不可用，HTTP " + code + "。");
+                    }
+                    throw new IOException("无法连接更新源，请检查网络后重试。");
+                }
+                int status = (int)response.StatusCode;
+                if (status == 200) return response;
+                string location = response.Headers["Location"]; response.Close();
+                if (status != 301 && status != 302 && status != 303 && status != 307 && status != 308)
+                    throw new IOException("更新源暂时不可用，HTTP " + status + "。");
+                Uri next;
+                if (hop == 5 || String.IsNullOrWhiteSpace(location) || !Uri.TryCreate(uri, location, out next))
+                    throw new InvalidDataException("更新下载跳转次数过多或地址无效。");
+                uri = next;
+            }
+            throw new InvalidDataException("更新下载跳转次数过多。");
+        }
         private static HttpWebRequest CreateRequest(Uri uri)
         {
-            if (uri.Scheme != "https" || uri.Host != "jihulab.com" || !uri.IsDefaultPort)
-                throw new InvalidDataException("更新仅允许使用极狐 GitLab 的 HTTPS 地址。");
             ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
             request.Method = "GET"; request.AllowAutoRedirect = false; request.Timeout = 20000;
             request.ReadWriteTimeout = 20000; request.UserAgent = "NezhaDesktopPet-Updater/1.0";
             request.AutomaticDecompression = DecompressionMethods.None;
+            request.Headers["Cache-Control"] = "no-cache";
             return request;
         }
         private static void CheckResponse(HttpWebResponse response, long maximum)

@@ -1,6 +1,10 @@
 ﻿param([string]$ReleaseDirectory)
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+if ((Get-Content -LiteralPath (Join-Path $petProjectRoot 'update-settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json).host -eq 'https://github.com') {
+    & (Join-Path $PSScriptRoot 'Publish-GitHub.ps1') -ReleaseDirectory $ReleaseDirectory
+    return
+}
 $petConfig = Get-Content -LiteralPath (Join-Path $petProjectRoot 'config.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $petSettings = Get-Content -LiteralPath (Join-Path $petProjectRoot 'update-settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $petVersion = [string]$petConfig.version
