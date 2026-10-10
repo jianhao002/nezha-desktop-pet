@@ -15,6 +15,8 @@
 
 公司电脑进入项目：`Set-Location -LiteralPath 'E:\pyprojects\nezha'`。换电脑继续同一分支时先检查 `git status`；工作区干净后执行 `git pull --ff-only`，再读 `AGENTS.md` 和 `docs/PROJECT_CONTEXT.md`。结束前提交、推送代码及交接记录，另一台电脑才能取得这些成果。
 
+公司电脑日常试玩固定在 `E:\pyprojects\nezha-preview`，桌面快捷方式名为“焰轮哪吒”。此目录独立于源码和 dist，后续部署保留其中的 `data`、`games`、`.update`。2026-10-10 首次安装 0.6.1 时使用独立新存档，没有迁移或改动旧版个人进度。
+
 ```text
 F:\nezha-desktop-pet\
   source\                 源码、Git；构建在 dist，验证报告在 qa
