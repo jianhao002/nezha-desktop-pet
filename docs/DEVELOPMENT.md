@@ -6,6 +6,15 @@
 
 当前家庭电脑使用固定父目录 `F:\nezha-desktop-pet`。源码目录为 `F:\nezha-desktop-pet\source`，有自己的 Git 仓库，提交范围只覆盖本项目。用户要求开发路径不放在 C 盘；其他开发电脑选择自己的非系统盘目录。
 
+公司电脑的固定源码目录为 `E:\pyprojects\nezha`。两台电脑各自检出同一个个人仓库，路径可以不同；共享的是 Git 提交和项目交接记录，本机存档仍分别保留。
+
+| 电脑 | 源码目录 |
+| --- | --- |
+| 公司 | `E:\pyprojects\nezha` |
+| 家庭 | `F:\nezha-desktop-pet\source` |
+
+公司电脑进入项目：`Set-Location -LiteralPath 'E:\pyprojects\nezha'`。换电脑继续同一分支时先检查 `git status`；工作区干净后执行 `git pull --ff-only`，再读 `AGENTS.md` 和 `docs/PROJECT_CONTEXT.md`。结束前提交、推送代码及交接记录，另一台电脑才能取得这些成果。
+
 ```text
 F:\nezha-desktop-pet\
   source\                 源码、Git；构建在 dist，验证报告在 qa
