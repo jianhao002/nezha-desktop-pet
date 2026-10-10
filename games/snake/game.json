@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "snake",
+  "name": "贪吃蛇",
+  "description": "经典与穿墙模式，悠闲到极限七档速度。方向键或 WASD 移动，空格暂停。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.SnakeGame",
+  "sources": ["Game.cs"]
+}

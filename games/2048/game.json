@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "2048",
+  "name": "2048",
+  "description": "用方向键合并相同数字。不计时，可以慢慢想。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.MergeGame",
+  "sources": ["Game.cs"]
+}

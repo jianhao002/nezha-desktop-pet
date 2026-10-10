@@ -2,6 +2,19 @@
 $ErrorActionPreference = 'Stop'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $petSettings = Get-Content -LiteralPath (Join-Path $petProjectRoot 'update-settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($petSettings.host -eq 'https://github.com') {
+    if ($petSettings.projectPath -ne 'jianhao002/nezha-desktop-pet') { throw '更新设置与已确认的个人 GitHub 仓库不一致。' }
+    $petStatus = @(git -C $petProjectRoot status --porcelain)
+    if ($LASTEXITCODE -ne 0 -or $petStatus.Count -gt 0) { throw '请先提交源码，再发布。' }
+    if ((git -C $petProjectRoot branch --show-current).Trim() -ne 'main') { throw '正式发布需要在 main 分支。' }
+    if ((git -C $petProjectRoot remote get-url origin).Trim() -ne 'https://github.com/jianhao002/nezha-desktop-pet.git') { throw 'origin 不是已确认的个人 GitHub 仓库。' }
+    & (Join-Path $PSScriptRoot 'Package.ps1') -SkipBuild:$SkipBuild
+    git -C $petProjectRoot push origin main
+    if ($LASTEXITCODE -ne 0) { throw '源码推送失败，尚未发布程序。请先完成 GitHub 登录。' }
+    & (Join-Path $PSScriptRoot 'Publish-GitHub.ps1')
+    Write-Output '源码与 GitHub 发布包均已上传。'
+    return
+}
 if ([string]$petSettings.host -ne 'https://jihulab.com' -or [string]$petSettings.projectPath -ne 'hddhhyhy/nezha-desktop-pet' -or [string]$petSettings.projectId -ne '375689') { throw '仓库设置与已确认的个人仓库不一致。' }
 $petGit = (Get-Command git -ErrorAction Stop).Source
 $petStatus = @(& $petGit -C $petProjectRoot status --porcelain)

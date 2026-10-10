@@ -9,8 +9,9 @@ $petHost = [Uri]([string]$petSettings.host)
 if ($petHost.Scheme -ne 'https' -or $petHost.AbsolutePath -ne '/' -or -not [string]::IsNullOrEmpty($petHost.UserInfo) -or -not [string]::IsNullOrEmpty($petHost.Query) -or -not [string]::IsNullOrEmpty($petHost.Fragment)) { throw '更新主机必须是没有凭证、路径和参数的 HTTPS 域名。' }
 if ([string]$petSettings.projectPath -notmatch '^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+$' -or [string]$petSettings.packageName -notmatch '^[A-Za-z0-9_.-]+$' -or [string]$petSettings.channel -notmatch '^[A-Za-z0-9_.-]+$') { throw '更新仓库路径、包名或频道格式错误。' }
 $petProjectId = 0L
-if (-not [long]::TryParse([string]$petSettings.projectId, [ref]$petProjectId) -or $petProjectId -le 0) { throw 'update-settings.json 需要正整数 projectId。' }
-if ([string]$petSettings.host -ne 'https://jihulab.com' -or [string]$petSettings.packageName -ne 'nezha-desktop-pet' -or [string]$petSettings.channel -ne 'latest') { throw '当前更新程序要求极狐 GitLab 的 nezha-desktop-pet / latest 发布通道。' }
+if ([string]$petSettings.host -notin @('https://jihulab.com', 'https://github.com') -or [string]$petSettings.packageName -ne 'nezha-desktop-pet' -or [string]$petSettings.channel -ne 'latest') { throw '更新程序要求 GitHub / 极狐 GitLab 的 nezha-desktop-pet / latest 发布通道。' }
+if ([string]$petSettings.host -eq 'https://jihulab.com' -and (-not [long]::TryParse([string]$petSettings.projectId, [ref]$petProjectId) -or $petProjectId -le 0)) { throw '极狐更新设置需要正整数 projectId。' }
+if ([string]$petSettings.host -eq 'https://github.com' -and [string]$petSettings.projectPath -notmatch '^[A-Za-z0-9_-][A-Za-z0-9_.-]*/[A-Za-z0-9_-][A-Za-z0-9_.-]*$') { throw 'GitHub 更新项目必须使用 用户名/仓库名。' }
 $petRuntime = Join-Path $petProjectRoot ('dist\nezha-desktop-v' + $petVersion)
 if (-not $SkipBuild) { & (Join-Path $petProjectRoot 'build.ps1') -OutputDirectory $petRuntime }
 foreach ($petRequired in @('NezhaPet.exe', 'NezhaUpdater.exe', 'config.json', 'update-settings.json', 'README.md', 'assets\nezha.png', 'assets\pet.ico')) {
@@ -51,9 +52,12 @@ $petArchiveProcess.Refresh()
 if ($petArchiveProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $petArchiveReport 'package-check.txt'))) { throw ('正式压缩包未通过桌宠更新校验；报告 ' + $petArchiveReport) }
 Write-Output ('PASS actual-release-archive → ' + $petArchiveReport)
 $petPackageBase = $petHost.AbsoluteUri.TrimEnd('/') + '/api/v4/projects/' + $petProjectId.ToString([Globalization.CultureInfo]::InvariantCulture) + '/packages/generic/' + [Uri]::EscapeDataString([string]$petSettings.packageName)
+if ([string]$petSettings.host -eq 'https://github.com') { $petPackageBase = 'https://github.com/' + [string]$petSettings.projectPath + '/releases/download' }
+$petDownloadUrl = $petPackageBase + '/' + $petVersion + '/' + $petFileName
+if ([string]$petSettings.host -eq 'https://github.com') { $petDownloadUrl = $petPackageBase + '/v' + $petVersion + '/' + $petFileName }
 $petManifest = [ordered]@{
     version = $petVersion
-    packageUrl = $petPackageBase + '/' + $petVersion + '/' + $petFileName
+    packageUrl = $petDownloadUrl
     sha256 = (Get-FileHash -LiteralPath $petZip -Algorithm SHA256).Hash.ToLowerInvariant()
     size = (Get-Item -LiteralPath $petZip).Length
 }

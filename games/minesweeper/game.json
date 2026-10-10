@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "minesweeper",
+  "name": "扫雷",
+  "description": "入门到专家五档棋盘，左键点开、右键插旗。第一步周围没有雷。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.MinesweeperGame",
+  "sources": ["Game.cs"]
+}

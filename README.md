@@ -1,14 +1,16 @@
-# 焰轮哪吒 · Windows 离线桌宠 0.4.1
+# 焰轮哪吒 · Windows 离线桌宠 0.6.1
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
 
-个人公开仓库：[hddhhyhy/nezha-desktop-pet](https://jihulab.com/hddhhyhy/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE.md)。
+个人公开仓库：[jianhao002/nezha-desktop-pet](https://github.com/jianhao002/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE.md)。
 
-跨电脑接续开发见 [项目背景与交接](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/PROJECT_CONTEXT.md)。源码仓库根目录的 `AGENTS.md` 引导 Codex 阅读共享背景；开发结束后同步关键决定、验证和未完成事项。
+跨电脑接续开发见 [项目背景与交接](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/PROJECT_CONTEXT.md)。源码仓库根目录的 `AGENTS.md` 引导 Codex 阅读共享背景；开发结束后同步关键决定、验证和未完成事项。
 
-0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/ROADMAP.md)。
+0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/ROADMAP.md)。
 
-请使用 0.4.1：它修复了不同 Windows PowerShell / .NET 版本生成 ZIP 路径分隔符不一致的问题。0.4.0 的更新包会被桌宠校验拒绝；0.4.1 使用标准 ZIP 路径，并在上传前用真实更新代码检查最终压缩包。功能与存档规则沿用 0.4.0。
+0.6.1 提供九款独立小窗游戏：扫雷、贪吃蛇、2048、俄罗斯方块、打砖块、记忆翻牌、数独、五子棋和数字华容道。支持多档难度、窗口模式、透明度、切走暂停与一键收起。新游戏可以放入独立文件夹接入，见 [小游戏使用与扩展](docs/MINI_GAMES.md)。现有动作与养成规则沿用 0.4.1。
+
+0.6.1 将源码与正式更新来源迁至个人 GitHub 仓库。旧极狐 GitLab 版首次迁移需要手动安装完整新版并保留存档，之后使用更新按钮下载 GitHub 正式发布包。跨电脑开发和安装步骤见 [GitHub 迁移指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/GITHUB_MIGRATION.md)。
 
 ## 开发目录与运行目录
 
@@ -20,7 +22,8 @@
 | `assets`、`config.json` | 动作素材、养成规则 | 是 |
 | `update-settings.json` | 公开更新源地址，没有凭证 | 是 |
 | `scripts`、`docs` | 本机测试、打包、发布和说明 | 是 |
-| `dist` | 编译生成的程序与发布压缩包 | 否，发布到 GitLab Package Registry |
+| `games`、`examples` | 内置小游戏源码、独立扩展示例 | 是 |
+| `dist` | 编译生成的程序与发布压缩包 | 否，发布到 GitHub Releases |
 | `qa` | 本机测试报告与预览 | 否 |
 | 运行目录的 `data`、`.update` | 游戏存档、更新暂存及旧版备份 | 否 |
 
@@ -28,11 +31,15 @@
 
 在桌宠右键菜单或托盘菜单选择更新功能，检查新版后下载并安装。下载期间可以看到状态；更新前会保存当前进度，安装时桌宠会退出，再自动启动。
 
-更新链路：读取公开 `latest/update.json` → 比较版本 → 下载指定版本发布包 → 校验大小和 SHA256 → 检查压缩包路径与文件白名单 → 保存存档 → 暂存目录中的更新助手等待旧程序退出 → 备份并替换程序 → 启动检查 → 重启桌宠。
+更新链路：读取 GitHub 最新正式发布中的 `update.json` → 比较版本 → 下载指定版本发布包 → 校验大小和 SHA256 → 检查压缩包路径与文件白名单 → 保存存档 → 暂存目录中的更新助手等待旧程序退出 → 备份并替换程序 → 启动检查 → 重启桌宠。
 
 SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的清单一致。发布包只有程序、素材和配置；`data` 不参与替换。更新失败时助手会尝试恢复旧程序；`.update` 里保留状态与旧文件，排查前不要手动删除。
 
-上传源码和发布桌宠是两个步骤。`git push` 只上传源码；维护者还需要运行发布脚本，生成并上传正式压缩包和更新清单，其他电脑的更新按钮才会发现新版。公开下载不需要输入 GitLab 凭证；只有维护者发布时需要自己的凭证。
+上传源码和发布桌宠是两个步骤。`git push` 只上传源码；维护者还需要运行发布脚本，生成并上传正式压缩包和更新清单，其他电脑的更新按钮才会发现新版。公开下载不需要登录 GitHub；只有维护者上传源码和发布时需要自己的凭证。
+
+### 从旧极狐版迁移
+
+退出桌宠并备份原程序目录。从 GitHub 发布页下载完整 ZIP，解压后将程序、配置和素材复制到原运行目录，保留原来的 `data`、`games`、`.update`。不要只改旧程序的更新设置：旧版本还不认识 GitHub 下载地址。安装完成后双击新版 `NezhaPet.exe`，以后可以正常使用更新按钮。
 
 ## 启动和操作
 
@@ -44,8 +51,15 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 6. 关闭养成面板不会退出桌宠；从右键菜单或右下角托盘选择“退出”。隐藏后可从托盘恢复。
 7. 在“成长”查看本级经验、下一级解锁内容和成长礼。
 8. 在“小屋”的“午睡补元气”卡片让哪吒睡一会儿；也可从右键或托盘菜单睡觉、叫醒。
+9. 右键哪吒或托盘 → 小游戏，打开扫雷、贪吃蛇或 2048。`Esc` 收起，`Ctrl+Alt+H` 收起 / 恢复；快捷键占用时可从原入口恢复。
 
 初始提供 50 金币、2 份桂花糖。金币是本地游戏数值，不涉及真实支付。
+
+### 休闲小游戏
+
+小窗提供普通、低调、极简三种尺寸和透明度预设，透明度可单独调整，默认切走暂停。收起保留本局，返回列表或退出程序结束本局。扫雷用鼠标，贪吃蛇用方向键 / WASD、空格暂停，2048 用方向键 / WASD 或箭头按钮。成绩单独保存在 `data/mini-games`，不影响养成进度。
+
+游戏列表点“添加游戏”，把新游戏文件夹放入打开的 `games` 目录，再刷新列表即可。接入示例、接口和更新兼容设计见 [小游戏使用与扩展](docs/MINI_GAMES.md)。
 
 ### 养成流程
 
@@ -97,19 +111,19 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 
 `data/save.json` 保存金币、背包、打工与午睡记录、属性、大小与位置，`data/save.json.bak` 是上一次有效存档备份。首次启动时自动生成 `data`。存档有备份恢复能力，但恢复后最后一次操作可能回退；两个文件都损坏时会报错，不会悄悄重置。
 
-### 已有 0.3.1 更新到 0.4.1
+### 历史：0.3.1 更新到 0.4.1
 
 在更新菜单检查已经发布的新版，安装前会保存当前进度。0.4.1 含午睡记录，存档格式为 3；格式 1 / 2 自动迁移，保留金币、背包、累计经验和已接工作。升级后的存档不能交给 0.3.1 及更早程序使用，回退时使用保留的旧版目录和它原来的存档。
 
 ### 0.1 / 0.2 第一次手工升级
 
 1. 退出旧版桌宠。
-2. 将 0.4.1 完整发布包解压到一个新目录，确认同时包含 `NezhaPet.exe`、`NezhaUpdater.exe`、`assets`、`config.json` 和 `update-settings.json`。
+2. 将当前完整发布包解压到一个新目录，确认同时包含 `NezhaPet.exe`、`NezhaUpdater.exe`、`assets`、`config.json` 和 `update-settings.json`。
 3. 在首次启动前，把旧版整个 `data` 文件夹复制到新版程序目录。
 4. 双击新版 exe。格式 1 / 2 存档会自动升级到格式 3，保留金币、背包、累计经验和进行中的工作，并补发尚未领取的成长礼。
 5. 以后在更新菜单安装已经发布的新版。0.1 / 0.2 程序没有更新功能，第一次升级需要按上述方式复制。
 
-0.3.1 起使用 GitLab 的数字项目 ID 检查与下载更新，修复 Windows .NET Framework 对带编码斜杠的仓库路径请求失败的问题。试用过 0.3.0 的电脑也请先手工换到当前版本，保留并复制原 `data`。
+历史上的 0.3.1～0.4.1 使用极狐 GitLab 数字项目 ID 检查更新。迁移到 GitHub 时仍需手动安装完整新版，保留原 `data`；不能通过旧极狐更新通道直接切换仓库。
 
 旧版已经买到的高等级零食仍然可以喂食；等级限制用于新购买和新接工作。
 
@@ -119,7 +133,7 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 
 动作包含原来的 9 类基础动画、3 套 Q 版吃东西动画，以及摸头、身体挠痒和睡觉动作，共 15 类。左右手继续使用红绫回应。点击神环会有大尺寸半透明呼吸光与星光，点击风火轮会有红金拖尾与火星；这些特效由程序绘制，不需要新增成套图片。
 
-下一阶段建议先做几个每日小目标和完成反馈，再增加可购买的饰品外观。新等级优先解锁动作、外观和玩法。详细顺序与验收边界见 [后续功能路线](https://jihulab.com/hddhhyhy/nezha-desktop-pet/-/blob/main/docs/ROADMAP.md)。
+下一阶段建议先做几个每日小目标和完成反馈，再增加可购买的饰品外观。新等级优先解锁动作、外观和玩法。详细顺序与验收边界见 [后续功能路线](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/ROADMAP.md)。
 
 ## 增加动作、零食和工作
 
@@ -188,6 +202,8 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 - `Tests.cs`：经济流程、午睡结算、重启、重复领奖、存档失败等验证。
 - `UpdateCore.cs`：公开更新源、版本检查、下载、压缩包校验与暂存计划。
 - `updater/Program.cs`：等待旧程序退出，备份、替换、检查启动、失败恢复。
+- `MiniGameApi.cs`、`MiniGameCatalog.cs`、`MiniGameWindow.cs`：小游戏接口、文件夹发现 / 编译与可调小窗。
+- `games/<id>`：三款内置小游戏，构建时嵌入 exe；`examples/my-game`：无需重编译主程序的接入模板。
 
 在 Windows PowerShell 中进入源码目录后运行：
 

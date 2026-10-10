@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "tetris",
+  "name": "俄罗斯方块",
+  "description": "四档速度，下一块预览与落点影子。方向键移动旋转、空格直落、P 暂停。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.BlockGame",
+  "sources": ["Game.cs"]
+}

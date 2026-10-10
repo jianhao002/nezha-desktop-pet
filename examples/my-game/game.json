@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "my-game",
+  "name": "小游戏接入示例",
+  "description": "点击计数示例：演示界面、暂停、本地成绩和只读宠物信息。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaExample.TapGame",
+  "sources": ["Game.cs"]
+}

@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "sudoku",
+  "name": "数独",
+  "description": "四档唯一解题目。点击格子，再点数字或键盘输入；支持清除、冲突标记与提示。",
+  "author": "焰轮哪吒",
+  "entryType": "NezhaGames.SudokuGame",
+  "sources": ["Game.cs"]
+}

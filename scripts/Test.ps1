@@ -18,13 +18,19 @@ $petChecks = @(
     @{ Name = 'native'; Argument = '--native-smoke'; Report = 'native-smoke.txt' },
     @{ Name = 'food'; Argument = '--food-preview'; Report = 'food-playback.txt' },
     @{ Name = 'actions'; Argument = '--actions-preview'; Report = 'actions-playback.txt' },
-    @{ Name = 'update'; Argument = '--update-test'; Report = 'update-test-results.txt' }
+    @{ Name = 'update'; Argument = '--update-test'; Report = 'update-test-results.txt' },
+    @{ Name = 'mini-games'; Argument = '--minigame-test'; Report = 'mini-game-results.txt' }
 )
 foreach ($petCheck in $petChecks) {
     $petOutput = Join-Path $petReportRoot $petCheck.Name
     # These controlled paths cannot contain quotes; the quotes preserve spaces.
     if ($petOutput.Contains('"')) { throw '测试路径不能含双引号。' }
     $petArgs = $petCheck.Argument + ' "' + $petOutput + '"'
+    if ($petCheck.Name -eq 'mini-games') {
+        $petExample = Join-Path $petProjectRoot 'examples\my-game'
+        if ($petExample.Contains('"')) { throw '示例路径不能含双引号。' }
+        $petArgs += ' "' + $petExample + '"'
+    }
     $petProcess = Start-Process -FilePath $petExecutable -ArgumentList $petArgs -WorkingDirectory $petRuntime -WindowStyle Hidden -PassThru
     if (-not $petProcess.WaitForExit(60000)) { $petProcess.Kill(); throw ('测试超时：' + $petCheck.Name) }
     $petProcess.Refresh()

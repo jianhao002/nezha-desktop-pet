@@ -26,7 +26,7 @@ namespace NezhaDesktop
             body.Children.Add(Ui.Text("让哪吒学会新本领", 22, Ui.Red));
             TextBlock version = Ui.Text("当前版本 v" + pet.Engine.Config.Version + "\n下载完成后自动重启，养成进度保留。", 12, Ui.Muted);
             version.Margin = new Thickness(0, 8, 0, 15); body.Children.Add(version);
-            status = Ui.Text("从个人 GitLab 检查已发布的新版本。", 13, Ui.Ink); status.MinHeight = 40; body.Children.Add(status);
+            status = Ui.Text("检查已发布的新版本。", 13, Ui.Ink); status.MinHeight = 40; body.Children.Add(status);
             progress = new ProgressBar { Minimum = 0, Maximum = 100, Height = 8, Margin = new Thickness(0, 10, 0, 16), Foreground = Ui.Red }; body.Children.Add(progress);
             check = Ui.Button("检查并更新", StartUpdate, true); body.Children.Add(check); Content = body;
             Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { if (busy && !applying) e.Cancel = true; };
