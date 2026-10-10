@@ -17,10 +17,11 @@
 | 项目 | 已核对状态 |
 | --- | --- |
 | 源码仓库 | <https://github.com/jianhao002/nezha-desktop-pet>；个人账号 `jianhao002` |
-| 本轮功能分支 | `codex/mini-games`，从 `main` 的 `2e176231` 开始 |
+| 源码分支 | `codex/mini-games` 已合并到 `main`；两者均同步到 GitHub |
 | 初次阅读项目时的源码提交 | `1e7e8bb7422102b22fc4b83d3d98adb77163645d` |
 | 当前版本 | `config.json` 为 `0.6.1`，内置九款小游戏，更新来源迁至 GitHub |
 | 公开更新源 | GitHub Releases：`jianhao002/nezha-desktop-pet`，最新正式发布的 `update.json` |
+| GitHub 当前正式版 | `v0.6.1`，2026-10-10 发布；20,333,024 字节，实际匿名客户端下载校验通过 |
 | 极狐历史正式清单 | 2026-10-01 读取为 `0.4.1`，20,282,341 字节；不代表 GitHub 当前版本 |
 | 极狐历史发布包 SHA256 | `a3efdf2655fd1057d0ae0dfc7beca70cd7db5869da4fe4796ba96332ac85268c` |
 | 存档格式 | `SchemaVersion = 3`，兼容迁移格式 1 / 2 |
@@ -205,5 +206,14 @@
 - 保留旧极狐兼容和同仓库校验。旧程序首次迁移需手动安装完整 GitHub 版，保留 `data`、`games`、`.update`，不能只修改设置或由旧通道暗中切换仓库。个人存档和在用运行目录未修改。
 - 发布脚本先验证 main 已推送，再创建草稿、上传 ZIP 与清单，核对 GitHub 返回的大小和 SHA256 后发布；最终使用真实客户端匿名下载验收。凭证不写入文件、日志或远端 URL。
 - 首轮更新测试有 3 项失败：JSON 序列化读取 GitHub 不适用的计算属性。已对计算属性添加 ScriptIgnore 并重新构建，完整检查随后通过：29 项规则、27 项动作、3 套食物动画、24 项更新检查、58 项小游戏、4 项真实更新助手安装/回滚/存档保护，以及窗口/托盘/像素穿透。
-- 本机完整报告：`E:\pyprojects\nezha\qa\run-20261010-171532-b51b43d9`。代码测试通过后只更新说明文档；最终打包继续执行实际 ZIP 校验。GitHub 发布完成情况将单独追加实际证据，不能把本机候选包视为已发布。
+- 本机完整报告：`E:\pyprojects\nezha\qa\run-20261010-171532-b51b43d9`。代码测试通过后只更新说明文档；最终打包继续执行实际 ZIP 校验。GitHub 发布的实际证据见下一条记录。
 - 尚未验证家庭电脑实机迁移、多显示器与不同缩放比例；用户存档不会随 Git 同步。后续开发从最新 main 开功能分支，不覆盖家庭电脑未提交工作。
+
+### 2026-10-10：GitHub 正式发布已完成
+
+- 功能提交 `1727b0d`；旧 main 两个 Markdown 文件统一换行格式后，合并提交为 `7dadbe8d086a3406634d567792177aef34b2a221`。合并后的程序、脚本、素材和配置与通过完整测试的功能分支一致。
+- 正式标签 `v0.6.1` 指向合并提交；发布页：<https://github.com/jianhao002/nezha-desktop-pet/releases/tag/v0.6.1>。ZIP 和 update.json 均已上传，GitHub 返回的附件大小与 SHA256 和本地一致，随后解除草稿并设为 Latest。
+- ZIP：`nezha-desktop-pet-0.6.1.zip`；20,333,024 字节；SHA256 `b11d95e669136496daf1544ce6f515a9ccbb46530a453760cbb2b03678f93f86`。最终 ZIP 实际解压检查报告 `qa/release-archive-0.6.1-aa210d98/package-check.txt` 为 PASS。
+- 真实客户端匿名验收：`qa/github-online-5ac06dc400a44a1a85b837f1455ec0d4/online-update.txt` 为 `PASS anonymous-public-check-and-download`，版本 0.6.1、字节数和 SHA256 与发布清单一致。此检查下载、校验并准备程序包，没有替换用户正在使用的程序或个人存档。
+- 普通使用者无须登录 GitHub；维护者本机标准 Git 登录已验证成功。家庭电脑仍需按迁移指南保存本机工作、切换 origin 并接续；在用旧极狐版仍需一次完整手动安装，后续才使用 GitHub 更新按钮。
+- 发布之后仅补充本交接证据，不重建或覆盖同版本附件。原极狐仓库与独立 renxingshiyan 未修改。
