@@ -1,0 +1,16 @@
+/* Desktop integration: keep the original board geometry and scale it to the game area. */
+html,body {margin:0;overflow:hidden;}
+body {background:#fffaf2;}
+body.night {background:#171c26;}
+.paused #pauseIcon {display:none!important;}
+.logo,.shareMenu,.donateMenu {display:none!important;}
+.saveSlot:nth-child(n+2) {display:none!important;}
+#desktopHelp {position:fixed;bottom:4px;left:4px;right:4px;text-align:center;font:11px 'Microsoft YaHei',sans-serif;color:#786b59;pointer-events:none;}
+.night #desktopHelp {color:#c9c9c9;}
+#desktopPause {display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.25);align-items:center;justify-content:center;}
+.paused:not(.titleScreen) #desktopPause {display:flex;}
+#desktopPause button {border:1px solid #b65b35;border-radius:8px;background:#fff6e6;color:#753820;font:16px 'Microsoft YaHei',sans-serif;padding:10px 22px;cursor:pointer;}
+.desktopSaving #desktopPause {display:flex;pointer-events:none;}
+.desktopSaving #desktopPause button {font-size:0;}
+.desktopSaving #desktopPause button:after {content:'正在保存本局…';font-size:14px;}
+#desktopRestart {position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:3000;border:1px solid #b65b35;border-radius:6px;background:#fff6e6;color:#753820;padding:7px 10px;}

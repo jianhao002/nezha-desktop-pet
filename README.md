@@ -1,6 +1,12 @@
-# 焰轮哪吒 · Windows 离线桌宠 0.7.0
+# 焰轮哪吒 · Windows 离线桌宠 0.8.0
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
+
+新增 **格子王国 · Gridland**：在原小游戏窗口中离线玩三消、建设和夜间战斗。第一次打开需要本机有 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)，本机已有时直接使用；缺少时会提示，其余十三款小游戏仍可使用。
+
+格子王国会保存棋盘、成长、昼夜进度、怪物血量和位置，重新打开后点击“继续游戏”。短暂的攻击、搬运和建设动画会重新计算，正在搬运的资源回到保存的仓库；临时飞行投射物不保存。原游戏的“导出成长”只含成长数据，完整迁移仍复制整个 `data` 目录。
+
+Gridland 原作者为 doublespeak games / Michael Townsend，原源码与修改后的源码保留 MPL-2.0 许可，位于仓库 `third_party/gridland`。WebView2 SDK 的 LICENSE / NOTICE 与 Gridland 原许可随程序嵌入，首次打开游戏后释放在 `data/mini-games/web-assets/gridland/<资源版本>` 内；对应源码和第三方声明随个人公开仓库提供。
 
 个人公开仓库：[jianhao002/nezha-desktop-pet](https://github.com/jianhao002/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE.md)。
 
@@ -8,7 +14,7 @@
 
 0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/ROADMAP.md)。
 
-0.7.0 提供十三款独立小窗游戏：扫雷、贪吃蛇、2048、俄罗斯方块、打砖块、记忆翻牌、数独、五子棋、数字华容道、莲宝连连看、莲火消消乐、纸牌接龙、哪吒点莲灯。支持多档难度、窗口模式、透明度、切走暂停与一键收起，全部内置游戏支持关闭后继续上一局。新游戏可以放入独立文件夹接入，见 [小游戏使用与扩展](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/MINI_GAMES.md)。现有动作与养成规则沿用 0.4.1。
+0.8.0 提供十四款独立小窗游戏：原有十三款游戏加格子王国。支持多档难度、窗口模式、透明度、切走暂停与一键收起，内置游戏支持关闭后继续上一局。现有 C# 游戏可通过独立文件夹接入，网页游戏需要适配容器接口，见 [小游戏使用与扩展](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/MINI_GAMES.md)。现有动作与养成规则沿用 0.4.1。
 
 0.6.1 将源码与正式更新来源迁至个人 GitHub 仓库。旧极狐 GitLab 版首次迁移需要手动安装完整新版并保留存档，之后使用更新按钮下载 GitHub 正式发布包。跨电脑开发和安装步骤见 [GitHub 迁移指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/GITHUB_MIGRATION.md)。
 
@@ -51,7 +57,7 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 6. 关闭养成面板不会退出桌宠；从右键菜单或右下角托盘选择“退出”。隐藏后可从托盘恢复。
 7. 在“成长”查看本级经验、下一级解锁内容和成长礼。
 8. 在“小屋”的“午睡补元气”卡片让哪吒睡一会儿；也可从右键或托盘菜单睡觉、叫醒。
-9. 右键哪吒或托盘 → 小游戏，选择十三款游戏。`Esc` 收起，`Ctrl+Alt+H` 收起 / 恢复；快捷键占用时可从原入口恢复。关闭后再次打开同一游戏，自动继续未结束的一局。
+9. 右键哪吒或托盘 → 小游戏，选择十四款游戏。`Ctrl+Alt+H` 收起 / 恢复；快捷键占用时可从原入口恢复，也可以点击“收起”。原 C# 游戏支持 `Esc` 收起；格子王国使用窗口按钮或全局快捷键。关闭后再次打开同一游戏，继续未结束的一局。
 
 初始提供 50 金币、2 份桂花糖。金币是本地游戏数值，不涉及真实支付。
 

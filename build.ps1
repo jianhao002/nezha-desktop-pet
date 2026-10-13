@@ -28,10 +28,18 @@ if (-not (Test-Path -LiteralPath $petUpdateCore) -or $petHelperSources.Count -eq
 if (-not (Test-Path -LiteralPath (Join-Path $petProjectRoot 'update-settings.json'))) { throw '缺少 update-settings.json。' }
 New-Item -ItemType Directory -Path $petBuildOutput -Force | Out-Null
 $petReferences = @('System.dll', 'System.Core.dll', 'System.Web.Extensions.dll', 'System.Drawing.dll', 'System.Windows.Forms.dll', 'System.Xaml.dll', 'Microsoft.CSharp.dll', 'System.Security.dll', 'System.IO.Compression.dll', 'System.IO.Compression.FileSystem.dll', 'WPF\WindowsBase.dll', 'WPF\PresentationCore.dll', 'WPF\PresentationFramework.dll')
+$petWeb = & (Join-Path $petProjectRoot 'scripts\Prepare-WebDependencies.ps1')
 function Invoke-PetCompiler([string]$Name, [string[]]$Sources) {
     $petCompileArgs = @('/nologo', '/target:winexe', '/platform:anycpu', '/optimize+', '/utf8output', '/codepage:65001', ('/out:' + (Join-Path $petBuildOutput $Name)), ('/win32manifest:' + (Join-Path $petProjectRoot 'app.manifest')), ('/win32icon:' + (Join-Path $petProjectRoot 'assets\pet.ico')))
     foreach ($petReference in $petReferences) { $petCompileArgs += ('/reference:' + (Join-Path $petFramework $petReference)) }
     if ($Name -eq 'NezhaPet.exe') {
+        foreach ($petWebName in @('Microsoft.Web.WebView2.Core', 'Microsoft.Web.WebView2.Wpf')) {
+            $petWebDll = Join-Path $petWeb.Sdk ('lib\net462\' + $petWebName + '.dll')
+            $petCompileArgs += ('/reference:' + $petWebDll)
+            $petCompileArgs += ('/resource:' + $petWebDll + ',Nezha.WebSDK.' + $petWebName + '.dll')
+        }
+        foreach ($petArch in @('x64', 'x86')) { $petCompileArgs += ('/resource:' + (Join-Path $petWeb.Sdk ('runtimes\win-' + $petArch + '\native\WebView2Loader.dll')) + ',Nezha.WebSDK.' + $petArch + '.dll') }
+        $petCompileArgs += ('/resource:' + $petWeb.Assets + ',Nezha.WebGames.gridland.zip')
         foreach ($petGameFolder in (Get-ChildItem -LiteralPath (Join-Path $petProjectRoot 'games') -Directory | Sort-Object Name)) {
             foreach ($petGameFile in (Get-ChildItem -LiteralPath $petGameFolder.FullName -File | Where-Object { $_.Name -eq 'game.json' -or $_.Extension -eq '.cs' } | Sort-Object Name)) {
                 $petCompileArgs += ('/resource:' + $petGameFile.FullName + ',Nezha.MiniGames.' + $petGameFolder.Name + '.' + $petGameFile.Name)
