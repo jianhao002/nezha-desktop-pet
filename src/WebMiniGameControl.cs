@@ -27,6 +27,7 @@ namespace NezhaDesktop.MiniGames
         public FrameworkElement View { get { return this; } }
         public bool CanResume { get { return true; } }
         public bool ReadyForTest { get { return ready; } }
+        public bool SavingForTest { get { return saving; } }
         public string LastError { get; private set; }
         private static JavaScriptSerializer Json() { return new JavaScriptSerializer { MaxJsonLength = 262144, RecursionLimit = 48 }; }
         public void Initialize(MiniGameContext context)

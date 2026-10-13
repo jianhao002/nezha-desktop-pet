@@ -17,9 +17,9 @@
 | 项目 | 已核对状态 |
 | --- | --- |
 | 源码仓库 | <https://github.com/jianhao002/nezha-desktop-pet>；个人账号 `jianhao002` |
-| 源码分支 | 正式 main 已包含 0.7.0；本轮 `codex/gridland-webview` 从 `575a396` 开始，0.8.0 网页游戏候选版见文末 |
+| 源码分支 | 家庭修复分支 `codex/gridland-utf8-fix` 从 `codex/gridland-webview` 的 `8ecab2b` 开始；main 的 0.7.0 和 Gridland 功能分支分开保留 |
 | 初次阅读项目时的源码提交 | `1e7e8bb7422102b22fc4b83d3d98adb77163645d` |
-| 当前开发版本 | `config.json` 为 `0.8.0`，内置十四款小游戏；固定 preview 已部署，正式更新仍为 0.7.0 |
+| 当前开发版本 | `config.json` 为 `0.8.1`，内置十四款小游戏，修复 Gridland 保存提示乱码；家庭 preview 已部署，本轮没有发布正式更新 |
 | 公开更新源 | GitHub Releases：`jianhao002/nezha-desktop-pet`，最新正式发布的 `update.json` |
 | GitHub 当前正式版 | `v0.7.0`，2026-10-13 发布；20,355,265 字节，实际匿名客户端下载校验通过 |
 | 极狐历史正式清单 | 2026-10-01 读取为 `0.4.1`，20,282,341 字节；不代表 GitHub 当前版本 |
@@ -258,3 +258,20 @@
 - 本轮交付为本机试玩和功能分支源码。正式 GitHub Latest 仍为 `v0.7.0`，没有上传 0.8.0 Release 或更改更新通道。家里接续先保存改动，再获取 `codex/gridland-webview`；不要把功能分支误当正式 main，也不要复制 QA 本局覆盖个人进度。实际提交定位见本记录的最近 Git 提交。
 - 尚需用户体验整条长局、不同显示缩放 / 其他电脑；ARM64 未验证。下一步按反馈修复手感和长局续局，再决定合并 / 正式发布；A Dark Room 等第二款网页游戏暂未接入。
 - 功能提交为 `4ca8da2ab201c4d867e5928918578e6cff172a9b`，已推送到个人 GitHub 的 `codex/gridland-webview`。本条只补充提交定位与同步证据，不重建程序或修改已验收候选包。
+
+### 2026-10-13：家庭电脑接续 GitHub 与 0.8.0 试玩
+
+- 用户提供个人 GitHub 地址并要求试玩 0.8.0。家庭源码仍在 `F:\nezha-desktop-pet\source`，旧极狐远端保留为 `gitlab`，`origin` 切换为 `https://github.com/jianhao002/nezha-desktop-pet.git`；保留全部历史和原有分支，接续 Gridland 的 `8ecab2b`。
+- 本机 PowerShell 7 构建、完整 Package/Test 和实际 ZIP 校验均通过：`qa/run-20261013-192738-ae84f6e0`、`qa/release-archive-0.8.0-7759b134`。包含 90 项小游戏、10 项真实网页和 2 项网页跨进程恢复，以及原规则、窗口、食物、动作、更新与四项助手集成。本机 WebView2 Runtime 为 154.0.4258.62。
+- 固定 `preview` 已从 0.6.0 更新到 0.8.0 并启动，28 个运行文件与测试构建一致，部署前后原 data/games/.update 的 28 个文件哈希不变。旧版完整备份 `archive/preview-0.6.0-20261013-192614`。本轮没有合并 main 或发布正式更新。
+- Windows PowerShell 5 最初不能解析新依赖脚本中的无 BOM UTF-8 中文；改用本机 PowerShell 7 后完成构建与测试，没有改动该脚本。后续若需要支持 PowerShell 5，应单独处理脚本编码。
+
+### 2026-10-13：修复 Gridland 保存提示乱码，0.8.1 试玩
+
+- 用户截图显示保存遮罩里的中文变为 `æ...`。在独立分支 `codex/gridland-utf8-fix` 修复，不直接改 main 或公司 Gridland 分支。
+- 原因：离线 HTML 缺少字符编码声明，CSS 伪元素中的“正在保存本局…”被按 Windows-1252 解码。修复为 HTML 头部添加 UTF-8 meta、桌面 CSS 首行添加 UTF-8 charset；资源按既有内容哈希自动释放到新缓存，不清理或覆盖旧本局。
+- 新回归检查先在原资源上实际失败，报告 `qa/gridland-utf8-before-6cf498c1` 与用户截图一致；修复后检查真实浏览器 computedStyle、document.characterSet、继续按钮和重开确认文案均通过，并生成修复前后预览。
+- 首轮完整检查 `qa/run-20261013-193838-9be0d819` 字体检查通过，但验证中的手动保存与五秒自动保存重叠。验证改为等待在途保存完成再发起手动保存；新增只读 SavingForTest 探针，未修改实际保存规则。重建并完整重跑 `qa/run-20261013-194124-64b2f674` 全部通过：90 项小游戏、13 项真实网页、2 项新进程恢复、规则、窗口、食物、动作、更新及四项助手集成。最终 ZIP 校验 `qa/release-archive-0.8.1-6bc1646e` 通过。
+- 本机候选 ZIP 33,964,424 字节，SHA256：`8ce77b47eaea296008642265bfacc0633f0dad23474cfb8b4e446dad52997a56`。这是新 0.8.1 候选包，没有覆盖同版本正式附件或发布 Release。
+- 用户明确退出旧试玩版后，已原位部署 `F:\nezha-desktop-pet\preview` 并启动为 0.8.1。28 个运行文件逐一匹配已测试构建；部署前后的 575 个原 data/games/.update 文件哈希完全一致。旧版完整备份 `archive/preview-0.8.0-20261013-193919`，报告 `qa/home-0.8.1-deployment.txt`。继续使用“哪吒试玩”快捷方式，已有本局保持兼容。
+- 提交定位看本文件所在修复分支的最近提交。公司接续先保存工作，获取本修复分支，将修复检查/合并到 Gridland 功能分支；之后再决定统一合并 main 和发布。当前任务没有接入第二款网页游戏或新增成长奖励。

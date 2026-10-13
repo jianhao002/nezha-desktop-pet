@@ -24,6 +24,15 @@ namespace NezhaDesktop
             }
             throw new TimeoutException("game not ready: " + predicate + " / " + game.LastError);
         }
+        private static async Task Save(WebMiniGameControl game)
+        {
+            DateTime end = DateTime.UtcNow.AddSeconds(10);
+            while (game.SavingForTest) {
+                if (DateTime.UtcNow >= end) throw new TimeoutException("automatic session save did not finish");
+                await Task.Delay(20);
+            }
+            game.SaveSession();
+        }
         public static int Run(Application app, string output, string resumeData = null)
         {
             if (Directory.Exists(output)) throw new IOException("网页游戏验证目录必须是新的。");
@@ -37,11 +46,25 @@ namespace NezhaDesktop
                     MiniGameEntry entry = catalog.Scan().Single(e => e.Manifest.Id == "gridland");
                     window.StartForTest(entry); WebMiniGameControl game = (WebMiniGameControl)window.ActiveGame;
                     await Wait(game, null); results.Add("PASS embedded-sdk-loader-assets-and-offline-page");
+                    if (resumeData == null) {
+                        await game.ExecuteForTest("document.body.classList.add('desktopSaving')");
+                        await Task.Delay(80);
+                        string savingText = new JavaScriptSerializer().Deserialize<string>(await game.ExecuteForTest("getComputedStyle(document.querySelector('#desktopPause button'),'::after').content"));
+                        await game.CaptureForTest(Path.Combine(output, "gridland-saving-text.png"));
+                        await game.ExecuteForTest("document.body.classList.remove('desktopSaving')");
+                        Require(savingText.Contains("正在保存本局…"), "saving prompt decoded incorrectly: " + savingText);
+                        results.Add("PASS css-saving-prompt-displays-chinese");
+                        Require(await game.ExecuteForTest("document.characterSet==='UTF-8'") == "true", "offline document is not UTF-8");
+                        Require(await game.ExecuteForTest("document.querySelector('#desktopPause button').textContent==='继续游戏'") == "true", "resume prompt decoded incorrectly");
+                        results.Add("PASS offline-page-and-resume-prompt-use-utf8");
+                        Require(await game.ExecuteForTest("require('app/graphics/graphics').getText('ARE_YOU_SURE')==='确定重新开始？'&&require('app/graphics/graphics').getText('CANCEL')==='取消'") == "true", "menu confirmation text decoded incorrectly");
+                        results.Add("PASS chinese-menu-confirmation-text");
+                    }
                     string processScript = "JSON.stringify({tiles:require('app/gameboard').desktopCapture().tiles,night:require('app/world').isNight(),actors:NezhaDesktop.testSnapshot().world.actors.map(function(a){return {kind:a.kind,name:a.name,hp:a.data._hp,position:a.data._position,gone:!!a.data.gone};}),health:require('app/gamestate').health,position:require('app/world').desktopState().position})";
                     if (resumeData != null) {
                         await Wait(game, "require('app/engine').isStarted()&&require('app/engine').paused");
                         Require(await game.ExecuteForTest(processScript) == File.ReadAllText(Path.Combine(data, "web.expected.json")), "new process did not restore the same board / battle");
-                        results.Add("PASS real-new-process-resumes-board-and-battle-paused"); window.Close();
+                        results.Add("PASS real-new-process-resumes-board-and-battle-paused"); await Save(game); window.Close();
                         File.WriteAllText(Path.Combine(output, "web-game-results.txt"), String.Join("\n", results) + "\nTOTAL=" + results.Count + " FAILED=0"); app.Shutdown(0); return;
                     }
                     await game.ExecuteForTest("NezhaDesktop.testStart();");
@@ -58,7 +81,7 @@ namespace NezhaDesktop
                     window.PreviewRoot.UpdateLayout();
                     RenderTargetBitmap full = new RenderTargetBitmap((int)window.PreviewRoot.ActualWidth, (int)window.PreviewRoot.ActualHeight, 96, 96, PixelFormats.Pbgra32); full.Render(window.PreviewRoot);
                     PngBitmapEncoder png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(full)); using (FileStream file = File.Create(Path.Combine(output, "gridland-window.png"))) png.Save(file);
-                    game.SetHostPaused(true); game.SaveSession();
+                    game.SetHostPaused(true); await Save(game);
                     string filePath = Path.Combine(data, "scores", "gridland", "session.json");
                     Require(File.Exists(filePath), "session not saved"); results.Add("PASS pause-and-atomic-session-save");
                     string session = File.ReadAllText(filePath); Require(session.Contains("tiles") && session.Contains("progress") && session.Contains("world"), "session missing rule state");
@@ -81,7 +104,7 @@ namespace NezhaDesktop
                     string nightScript = "JSON.stringify({night:require('app/world').isNight(),actors:NezhaDesktop.testSnapshot().world.actors.map(function(a){return {kind:a.kind,name:a.name,hp:a.data._hp,position:a.data._position,gone:!!a.data.gone};}),health:require('app/gamestate').health,position:require('app/world').desktopState().position})";
                     string night = await game.ExecuteForTest(nightScript);
                     Require(night.Contains("zombie"), "night fixture did not spawn monster");
-                    game.SaveSession(); window.ShowCatalog(); window.StartForTest(entry); game=(WebMiniGameControl)window.ActiveGame;
+                    await Save(game); window.ShowCatalog(); window.StartForTest(entry); game=(WebMiniGameControl)window.ActiveGame;
                     await Wait(game, "require('app/engine').isStarted()&&require('app/engine').paused");
                     string restoredNight=await game.ExecuteForTest(nightScript);
                     Require(restoredNight==night,"night actors / health / time changed on resume"); results.Add("PASS night-monster-health-position-and-day-night-roundtrip");
@@ -94,7 +117,7 @@ namespace NezhaDesktop
                         await game.CaptureForTest(Path.Combine(output, "gridland-" + width + ".png"));
                     }
                     results.Add("PASS three-small-window-render-sizes");
-                    window.Close(); Require(window.ActiveGame == null, "normal close did not dispose"); results.Add("PASS normal-window-close-persists-and-disposes");
+                    await Save(game); window.Close(); Require(window.ActiveGame == null, "normal close did not dispose"); results.Add("PASS normal-window-close-persists-and-disposes");
                     File.WriteAllText(Path.Combine(output, "web-game-results.txt"), String.Join("\n", results) + "\nTOTAL=" + results.Count + " FAILED=0"); app.Shutdown(0);
                 } catch (Exception ex) {
                     results.Add("FAIL " + ex); File.WriteAllText(Path.Combine(output, "web-game-results.txt"), String.Join("\n", results));

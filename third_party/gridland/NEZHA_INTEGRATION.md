@@ -18,3 +18,7 @@ are not serialized. This is not a deterministic replay of animation frames.
 
 Native growth import/export does not include the desktop board/battle snapshot.
 Copying the whole Nezha data directory is the supported desktop save transfer.
+
+2026-10-13: declare UTF-8 in the offline HTML document and desktop stylesheet.
+This fixes Chinese CSS-generated saving text being decoded as Windows-1252.
+The game rules, session format and original attribution remain unchanged.

@@ -1,6 +1,8 @@
-# 焰轮哪吒 · Windows 离线桌宠 0.8.0
+# 焰轮哪吒 · Windows 离线桌宠 0.8.1
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
+
+0.8.1 试玩版修复格子王国“正在保存本局…”提示出现乱码的问题，保留已有本局、成长数据和其他游戏成绩。
 
 新增 **格子王国 · Gridland**：在原小游戏窗口中离线玩三消、建设和夜间战斗。第一次打开需要本机有 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)，本机已有时直接使用；缺少时会提示，其余十三款小游戏仍可使用。
 

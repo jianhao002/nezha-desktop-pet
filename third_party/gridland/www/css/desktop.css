@@ -1,3 +1,4 @@
+@charset "UTF-8";
 /* Desktop integration: keep the original board geometry and scale it to the game area. */
 html,body {margin:0;overflow:hidden;}
 body {background:#fffaf2;}
