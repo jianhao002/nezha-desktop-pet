@@ -1,5 +1,6 @@
 ﻿param([string]$ReleaseDirectory)
 $ErrorActionPreference = 'Stop'
+Write-Host 'GitHub release: checking source and package'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $petSettings = Get-Content -LiteralPath (Join-Path $petProjectRoot 'update-settings.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 if ($petSettings.host -ne 'https://github.com' -or $petSettings.projectPath -ne 'jianhao002/nezha-desktop-pet') { throw '发布目标不是已确认的个人 GitHub 仓库。' }
@@ -63,10 +64,12 @@ function Invoke-PetGitHubApi([string]$Method, [string]$Url, [object]$Body, [stri
         -not (($petUri.Host -eq 'api.github.com' -and ($petUri.AbsolutePath -eq '/user' -or $petUri.AbsolutePath.StartsWith('/repos/jianhao002/nezha-desktop-pet/'))) -or
               ($petUri.Host -eq 'uploads.github.com' -and $petUri.AbsolutePath -match '^/repos/jianhao002/nezha-desktop-pet/releases/[0-9]+/assets$'))) { throw '拒绝向未确认的地址发送发布凭据。' }
     $petResponse = $null; $petStream = $null; $petReader = $null; $petInput = $null
+    Write-Host ('GitHub release: ' + $Method + ' ' + $petUri.AbsolutePath)
     try {
         $petRequest = [Net.HttpWebRequest]::Create($petUri)
         $petRequest.Method = $Method
         $petRequest.AllowAutoRedirect = $false
+        $petRequest.ServicePoint.Expect100Continue = $false
         $petRequest.Timeout = 180000
         $petRequest.ReadWriteTimeout = 180000
         $petRequest.UserAgent = 'NezhaDesktopPet-Release'
@@ -111,8 +114,10 @@ function Invoke-PetGitHubApi([string]$Method, [string]$Url, [object]$Body, [stri
 }
 
 try {
+    Write-Host 'GitHub release: reading existing Git login'
     $petToken = Get-PetCachedGitHubCredential
     if ([string]::IsNullOrWhiteSpace($petToken)) {
+        if ([Console]::IsInputRedirected) { throw '本次发布未能读取标准 Git 登录；请在本机完成 GitHub 登录后再运行，非交互发布不会等待令牌输入。' }
         $petSecureToken = Read-Host '请输入仅此仓库 Contents 读写权限的 GitHub 令牌（隐藏输入）' -AsSecureString
         $petPointer = [IntPtr]::Zero
         try {
@@ -124,6 +129,7 @@ try {
             $petSecureToken.Dispose()
         }
     }
+    Write-Host 'GitHub release: existing login ready'
     if ([string]::IsNullOrWhiteSpace($petToken) -or $petToken -match '[\r\n]') { throw '发布凭据为空或格式错误。' }
     $petUser = Invoke-PetGitHubApi -Method GET -Url 'https://api.github.com/user'
     if ($petUser.login -ne 'jianhao002') { throw '发布登录不是已确认的个人账号 jianhao002。' }
