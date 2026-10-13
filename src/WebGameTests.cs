@@ -22,7 +22,8 @@ namespace NezhaDesktop
                 if (game.ReadyForTest && (predicate == null || await game.ExecuteForTest(predicate) == "true")) return;
                 await Task.Delay(50);
             }
-            throw new TimeoutException("game not ready: " + predicate + " / " + game.LastError);
+            string diagnostic = await game.ExecuteForTest("JSON.stringify((function(){var e=require('app/engine'),w=require('app/world'),s=require('app/gamestate'),d=w.getDude();return {paused:e.paused,death:NezhaDesktop.waitingForRetry(),saving:NezhaDesktop.saving,health:s.health,deaths:s.counts&&s.counts.DEATHS,dude:d&&{gone:d.gone,frame:d.frame,action:!!d.action},board:require('app/gameboard').desktopStable(),world:w.desktopStable(),capture:window.deathCaptureResult};})())");
+            throw new TimeoutException("game not ready: " + predicate + " / " + game.LastError + " / " + diagnostic);
         }
         private static async Task Save(WebMiniGameControl game)
         {
@@ -95,6 +96,66 @@ namespace NezhaDesktop
                     string before = await game.ExecuteForTest("require('app/world').desktopState().dude._position"); await Task.Delay(350);
                     Require(await game.ExecuteForTest("require('app/world').desktopState().dude._position") == before, "actor moved while paused");
                     results.Add("PASS host-pause-stops-world-movement");
+                    // Real zero-HP death, including the original animation / count / checkpoint path.
+                    await game.ExecuteForTest("NezhaDesktop.testResume();");
+                    await Wait(game, "require('app/world').desktopStable()&&require('app/gamestate').hasBase()");
+                    await game.ExecuteForTest("var s=require('app/gamestate');s.dayNumber=3;s.xp=7;s.health=s.maxHealth();s.counts.DEATHS=0;require('app/eventmanager').trigger('dayBreak',[3]);require('app/eventmanager').trigger('phaseChange',[true]);");
+                    await Wait(game, "require('app/world').desktopStable()&&require('app/world').isNight()");
+                    await Save(game);
+                    string growthScript = "JSON.stringify((function(){var s=require('app/gamestate');return {buildings:s.buildings.map(function(b){return {type:b.options.type.className,built:b.built,obsolete:b.obsolete,resources:b.requiredResources};}),stores:s.stores.map(function(b){return {type:b.options.type.className,quantity:b._quantity};}),level:s.level,xp:s.xp,day:s.dayNumber,items:s.items,gem:s.gem,mana:s.mana,prestige:s.prestige};})())";
+                    string growth = await game.ExecuteForTest(growthScript);
+                    await game.ExecuteForTest("var d=require('app/world').getDude();d.shield=0;d.takeDamage(10000);");
+                    Require(await game.ExecuteForTest("require('app/gamestate').health===0") == "true", "death fixture did not reach zero HP");
+                    await Wait(game, "NezhaDesktop.waitingForRetry()&&require('app/gamestate').counts.DEATHS===1&&require('app/engine').paused");
+                    Require(await game.ExecuteForTest("document.querySelector('#desktopDeathTitle').textContent==='你倒下了'&&document.querySelector('#desktopDeathMessage').textContent==='已保存的成长保留，将从第 3 天白天重试。'") == "true", "death / retry text is wrong");
+                    results.Add("PASS real-zero-hp-death-counts-once-and-shows-saved-day");
+                    foreach (int width in new[] { 310, 380, 470 }) {
+                        window.Width=width; window.Height=width==310?465:width==380?550:650; window.UpdateLayout(); await Task.Delay(100);
+                        Require(await game.ExecuteForTest("(function(){var d=document.querySelector('#desktopDeath [role=dialog]'),r=d.getBoundingClientRect();return r.width>0&&r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight&&d.scrollHeight<=d.clientHeight;})()") == "true", "death dialog does not fit small window");
+                        await game.CaptureForTest(Path.Combine(output,"gridland-death-"+width+".png"));
+                    }
+                    results.Add("PASS death-dialog-fits-three-small-window-sizes");
+                    await game.ExecuteForTest("NezhaDesktop.testResume();require('app/eventmanager').trigger('unpause');document.body.click();");
+                    await Task.Delay(3000);
+                    Require(await game.ExecuteForTest("NezhaDesktop.waitingForRetry()&&require('app/engine').paused&&require('app/world').isNight()&&require('app/gamestate').health===0&&require('app/gamestate').counts.DEATHS===1") == "true", "death resumed without Continue or counted twice");
+                    results.Add("PASS death-waits-for-explicit-continue-and-blocks-background-resume");
+                    await Save(game);
+                    Require(new JavaScriptSerializer().Deserialize<MiniGameSessionRecord>(File.ReadAllText(filePath)).State == null, "defeated battle was not marked ended");
+                    Require(await game.ExecuteForTest("JSON.parse(localStorage.slot0).health===0&&JSON.parse(localStorage.slot0).counts.DEATHS===1") == "true", "checkpoint was overwritten while waiting");
+                    window.ShowCatalog(); window.StartForTest(entry); game=(WebMiniGameControl)window.ActiveGame;
+                    await Wait(game, "NezhaDesktop.waitingForRetry()&&require('app/engine').paused");
+                    Require(await game.ExecuteForTest("!require('app/engine').isStarted()&&document.querySelector('#desktopDeathMessage').textContent.indexOf('第 3 天')>=0") == "true", "reopened defeated battle or lost retry day");
+                    results.Add("PASS close-reopen-preserves-death-dialog-without-resurrecting-battle");
+                    // Repeat click while initialization is pending must still create only one retry.
+                    await game.ExecuteForTest("document.querySelector('#desktopDeath button').click();document.querySelector('#desktopDeath button').click();");
+                    await Wait(game, "require('app/engine').isStarted()&&!NezhaDesktop.waitingForRetry()&&!require('app/world').isNight()&&require('app/gamestate').health===require('app/gamestate').maxHealth()");
+                    Require(await game.ExecuteForTest(growthScript) == growth, "retry changed the retained growth checkpoint");
+                    Require(await game.ExecuteForTest("require('app/gamestate').counts.DEATHS===1&&!localStorage.nezhaDeathRetry&&!document.body.classList.contains('desktopDeath')") == "true", "retry retained death flag or changed death count");
+                    results.Add("PASS continue-once-restores-saved-growth-and-full-health-in-daylight");
+                    await game.ExecuteForTest("NezhaDesktop.testResume();");
+                    await Wait(game, "require('app/world').desktopStable()&&require('app/world').desktopState().celestial!=null");
+                    await game.ExecuteForTest("require('app/eventmanager').trigger('phaseChange',[true]);");
+                    await Wait(game,"require('app/world').isNight()&&require('app/world').desktopStable()&&require('app/engine').desktopStable()&&require('app/gameboard').desktopStable()");
+                    // Begin a capture while a real tile swap is settling, then die before it completes.
+                    Require(await game.ExecuteForTest("NezhaDesktop.testMove()") == "true", "no playable move for capture/death fixture");
+                    await game.ExecuteForTest("setTimeout(function(){var d=require('app/world').getDude();d.shield=0;d.takeDamage(10000);},50);");
+                    await Save(game);
+                    await Wait(game,"NezhaDesktop.waitingForRetry()");
+                    Require(await game.ExecuteForTest("JSON.parse(localStorage.slot0).counts.DEATHS===2&&require('app/engine').paused") == "true", "capture racing with death overwrote checkpoint or resumed battle");
+                    await Save(game);
+                    results.Add("PASS death-during-in-flight-capture-keeps-checkpoint-and-retry-paused");
+                    await game.ExecuteForTest("document.querySelector('#desktopDeath button').click();");
+                    await Wait(game,"require('app/engine').isStarted()&&!NezhaDesktop.waitingForRetry()&&!require('app/world').isNight()&&require('app/gamestate').health>0");
+                    await game.ExecuteForTest("NezhaDesktop.testResume();");
+                    await Wait(game,"require('app/world').desktopStable()&&require('app/world').desktopState().celestial!=null");
+                    await game.ExecuteForTest("var d=require('app/world').getDude();d.shield=0;d.takeDamage(10000);");
+                    await Save(game); // Save/close immediately, before the death animation finishes.
+                    Require(await game.ExecuteForTest("NezhaDesktop.waitingForRetry()&&JSON.parse(localStorage.slot0).counts.DEATHS===3") == "true", "immediate close lost death checkpoint");
+                    window.ShowCatalog(); window.StartForTest(entry); game=(WebMiniGameControl)window.ActiveGame;
+                    await Wait(game,"NezhaDesktop.waitingForRetry()&&require('app/engine').paused");
+                    results.Add("PASS immediate-save-close-finishes-death-and-restores-retry-dialog");
+                    await game.ExecuteForTest("document.querySelector('#desktopDeath button').click();");
+                    await Wait(game,"require('app/engine').isStarted()&&!NezhaDesktop.waitingForRetry()&&!require('app/world').isNight()&&require('app/gamestate').health>0");
                     await game.ExecuteForTest("NezhaDesktop.testResume();");
                     await Wait(game, "require('app/world').desktopState().celestial!=null");
                     game.SetHostPaused(true); await Wait(game, "require('app/engine').paused");

@@ -1,7 +1,7 @@
 /* Nezha desktop adapter. Save rule data, not DOM objects or timer callbacks. */
 define(['jquery','app/engine','app/eventmanager','app/gameboard','app/world','app/gamestate','app/gamecontent','app/desktopworld','app/gameoptions'],
 function($,Engine,E,Board,World,State,Content,WorldSession,Options) {
-    var restoring=false, pending=null, ready=false, ended=false;
+    var restoring=false, pending=null, ready=false, ended=false, deathPending=false, retrying=false;
     function post(note) { if(window.chrome && chrome.webview) chrome.webview.postMessage(note); }
     function failedResume(message) {
         post({kind:'resume-error',message:message});
@@ -13,7 +13,19 @@ function($,Engine,E,Board,World,State,Content,WorldSession,Options) {
         });
     }
     function pause() { E.trigger('pause'); World.desktopFreezeEffects(true); $('body').addClass('paused'); }
-    function resume() { if(window.nezhaHostPaused || restoring || Desktop.saving) return; E.trigger('unpause'); World.desktopFreezeEffects(false); }
+    function resume() { if(window.nezhaHostPaused || restoring || Desktop.saving || deathPending) return; E.trigger('unpause'); World.desktopFreezeEffects(false); }
+    function showDeath() {
+        deathPending=true; ended=true; pause();
+        var info=State.getSlotInfo(0), day=info && info.day || 1;
+        $('#desktopDeathMessage').text('已保存的成长保留，将从第 '+day+' 天白天重试。');
+        $('body').addClass('desktopDeath');
+    }
+    function retry() {
+        if(!deathPending || retrying || Desktop.saving) return;
+        retrying=true; $('#desktopDeath button').prop('disabled',true).text('正在准备…');
+        // Reload the local page in a fresh realm; old board timers cannot affect the retry.
+        localStorage.nezhaDeathContinue='true'; post({kind:'retry'});
+    }
     function clean(value,depth) {
         if((depth||0)>18) throw new Error('续局数据层级过深');
         if(value && typeof value==='object') Object.keys(value).forEach(function(key){if(key==='__proto__'||key==='constructor'||key==='prototype') throw new Error('续局数据字段无效');clean(value[key],(depth||0)+1);});
@@ -37,35 +49,56 @@ function($,Engine,E,Board,World,State,Content,WorldSession,Options) {
     function settle() {
         return new Promise(function(resolve,reject){
             var start=Date.now();
-            function check(){if(stable()) resolve();else if(Date.now()-start>7500) reject(new Error('棋盘动画尚未结束，请稍候再保存'));else setTimeout(check,20);}
+            function check(){
+                // A close/save during the death animation must let the world persist
+                // its death count and retry flag before the control is disposed.
+                var dying=State.health<=0 && !deathPending;
+                if(!dying && (ended || stable())) resolve();
+                else if(Date.now()-start>7500) reject(new Error('棋盘动画尚未结束，请稍候再保存'));
+                else setTimeout(check,20);
+            }
             Engine.desktopPause(false); E.trigger('afterUnpaused'); check();
         });
     }
     function capture() {
+        if(deathPending || (ended && State.health>0)) return Promise.resolve('null');
         if(!Engine.isStarted()) return Promise.resolve('menu');
-        if(ended || State.health<=0) return Promise.resolve('null');
         var paused=Engine.paused; Desktop.saving=true; $('body').addClass('desktopSaving'); World.desktopFreezeEffects(true);
         return settle().then(function(){
+            if(ended || State.health<=0) return 'null';
             State.save(); var world=WorldSession.capture(),progress=JSON.parse(localStorage.slot0);
             if(world.carrying) progress.stores.push(world.carrying);
             delete world.carrying;
             var snapshot={version:1,board:WorldSession.plain(Board.desktopCapture()),world:world,progress:progress,options:JSON.parse(localStorage.gameOptions||'{}')};
             validate(snapshot); return JSON.stringify(snapshot);
-        }).finally(function(){Desktop.saving=false;$('body').removeClass('desktopSaving');Engine.desktopPause(paused||!!window.nezhaHostPaused);World.desktopFreezeEffects(Engine.paused);});
+        }).finally(function(){Desktop.saving=false;$('body').removeClass('desktopSaving');Engine.desktopPause(deathPending||paused||!!window.nezhaHostPaused);World.desktopFreezeEffects(Engine.paused);});
     }
     var Desktop=window.NezhaDesktop={
         saving:false,
+        waitingForRetry:function(){return deathPending;},
+        died:function(){
+            // The world has counted this death and persisted the original growth checkpoint.
+            // Retain the retry screen across window close; never restore the defeated battle.
+            localStorage.nezhaDeathRetry='true'; showDeath();
+        },
         engineReady:function(){
             E.bind('pause',function(){World.desktopFreezeEffects(true);});
-            E.bind('unpause',function(){if(!window.nezhaHostPaused) World.desktopFreezeEffects(false);});
+            E.bind('unpause',function(){if(!window.nezhaHostPaused && !deathPending) World.desktopFreezeEffects(false);});
             E.bind('dudeDeath',function(){ended=true;post({kind:'ended'});});
             E.bind('gameOver',function(){ended=true;post({kind:'ended'});});
-            E.bind('phaseChange',function(){if(State.health>0)ended=false;});
+            E.bind('phaseChange',function(){if(State.health>0 && !deathPending)ended=false;});
+            if(deathPending) showDeath();
         },
         started:function(){
+            var wasRetry=retrying;
+            if(retrying){
+                retrying=false; deathPending=false; localStorage.removeItem('nezhaDeathRetry');localStorage.removeItem('nezhaDeathContinue');
+                $('body').removeClass('desktopDeath'); $('#desktopDeath button').prop('disabled',false).text('继续');
+            }
             ended=false;
             if(pending){var s=pending;pending=null;restoring=true;Desktop.saving=true;settle().then(function(){Board.desktopRestore(s.board);WorldSession.restore(s.world);pause();}).catch(function(e){failedResume(e.message);pause();}).finally(function(){restoring=false;Desktop.saving=false;post({kind:'ready'});});}
-            else {post({kind:'new-session'}); if(window.nezhaHostPaused) pause();}
+            else {post({kind:'new-session'}); if(window.nezhaHostPaused) pause(); else if(wasRetry) resume();}
+            if(wasRetry) post({kind:'ready'});
         },
         setHostPaused:function(value){window.nezhaHostPaused=value;if(value)pause();},
         save:function(id){capture().then(function(json){post({kind:'saved',id:id,json:json});}).catch(function(e){post({kind:'save-error',id:id,message:e.message});});},
@@ -86,15 +119,20 @@ function($,Engine,E,Board,World,State,Content,WorldSession,Options) {
         capture:capture
     };
     return {init:function(){
-        $('body').append('<div id="desktopPause"><button>继续游戏</button></div><div id="desktopHelp">点击相邻格子交换 · 白天建设，夜晚战斗</div>');
+        $('body').append('<div id="desktopPause"><button>继续游戏</button></div><div id="desktopDeath"><div role="dialog" aria-modal="true" aria-labelledby="desktopDeathTitle" aria-describedby="desktopDeathMessage"><h2 id="desktopDeathTitle">你倒下了</h2><p id="desktopDeathMessage"></p><p class="deathHint">夜晚记得补充护盾和武器，再迎战怪物。</p><button data-clickable="true">继续</button></div></div><div id="desktopHelp">点击相邻格子交换 · 白天建设，夜晚战斗</div>');
         $('#desktopPause button').on('click',function(e){e.stopPropagation();resume();});
+        $('#desktopDeath').on('mousedown touchstart click',function(e){e.stopPropagation();});
+        $('#desktopDeath button').on('click',function(e){e.stopPropagation();retry();});
+        deathPending=localStorage.nezhaDeathRetry==='true';
+        retrying=deathPending && localStorage.nezhaDeathContinue==='true';
+        if(retrying) $('#desktopDeath button').prop('disabled',true).text('正在准备…');
         if(window.nezhaResumeBlocked) failedResume('存档未读取');
-        if(window.nezhaInitialSession) {
+        if(window.nezhaInitialSession && !deathPending) {
             try {pending=validate(window.nezhaInitialSession);localStorage.slot0=JSON.stringify(pending.progress);localStorage.gameOptions=JSON.stringify(pending.options||{});}
             catch(e){failedResume(e.message);pending=null;}
         }
         Engine.init();
-        var timer=setInterval(function(){if(Engine.desktopReady()){clearInterval(timer);ready=true;if(pending) Engine.desktopStart(0);else post({kind:'ready'});}},30);
+        var timer=setInterval(function(){if(Engine.desktopReady()){clearInterval(timer);ready=true;if(pending || retrying) Engine.desktopStart(0);else post({kind:'ready'});}},30);
         window.addEventListener('error',function(e){post({kind:'error',message:e.message});});
     }};
 });

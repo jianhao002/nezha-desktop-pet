@@ -557,7 +557,8 @@ define(['jquery', 'app/eventmanager', 'app/analytics', 'app/graphics/graphics', 
 	}
 	
 	function makeStuffHappen() {
-		if(window.NezhaDesktop && window.NezhaDesktop.saving) return;
+		// While saving, only a zero-HP death may finish so its checkpoint is persisted.
+		if(window.NezhaDesktop && window.NezhaDesktop.saving && GameState.health>0) return;
 
 		// Cheap hack to implement pause
 		if(require('app/engine').paused) return;
@@ -605,7 +606,9 @@ define(['jquery', 'app/eventmanager', 'app/analytics', 'app/graphics/graphics', 
 					inTransition = true;
 					GameState.count('DEATHS', 1);
 					GameState.savePersistents();
-					Graphics.fadeOut(function() {
+					if(window.NezhaDesktop && window.NezhaDesktop.died) {
+						window.NezhaDesktop.died();
+					} else Graphics.fadeOut(function() {
 						setTimeout(function() {
 							stuff.length = 0;
 							Graphics.setNight(false);

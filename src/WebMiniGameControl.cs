@@ -24,6 +24,7 @@ namespace NezhaDesktop.MiniGames
         private int requestId;
         private TaskCompletionSource<string> saveRequest;
         private string initial;
+        private string startupScriptId;
         public FrameworkElement View { get { return this; } }
         public bool CanResume { get { return true; } }
         public bool ReadyForTest { get { return ready; } }
@@ -72,12 +73,32 @@ namespace NezhaDesktop.MiniGames
                 core.PermissionRequested += delegate(object s, CoreWebView2PermissionRequestedEventArgs e) { e.State = CoreWebView2PermissionState.Deny; };
                 core.WebMessageReceived += Receive;
                 core.ProcessFailed += delegate { ready = false; LastError = "网页游戏进程异常，请返回列表后再打开；已保存的本局保留。"; message.Text = LastError; message.Visibility = Visibility.Visible; };
-                await core.AddScriptToExecuteOnDocumentCreatedAsync("window.nezhaHost=true;window.nezhaHostPaused=" + (hostPaused ? "true" : "false") + ";window.nezhaResumeBlocked=" + (resumeBlocked ? "true" : "false") + ";window.nezhaInitialSession=JSON.parse(" + Json().Serialize(initial ?? "null") + ");");
+                startupScriptId = await core.AddScriptToExecuteOnDocumentCreatedAsync(StartupScript());
                 if (!disposed) core.Navigate("https://gridland.nezha.invalid/index.html?silent");
             } catch (Exception ex) {
                 if (disposed) return; LastError = ex.Message;
                 message.Text = "网页游戏暂时无法启动。请确认已安装 Microsoft Edge WebView2 Runtime，然后返回游戏列表重试。\n" + ex.Message;
                 host.Notify("格子王国未启动；其余小游戏仍可使用。");
+            }
+        }
+        private string StartupScript()
+        { return "window.nezhaHost=true;window.nezhaHostPaused=" + (hostPaused ? "true" : "false") + ";window.nezhaResumeBlocked=" + (resumeBlocked ? "true" : "false") + ";window.nezhaInitialSession=JSON.parse(" + Json().Serialize(initial ?? "null") + ");"; }
+        private async void RetryBrowser()
+        {
+            if (!ready || disposed) return;
+            ready = false; initial = null;
+            try {
+                // Reset pending animation callbacks by reloading only the local game page.
+                // Saving skips navigation; the persisted death marker already ends the old battle.
+                CoreWebView2 core = web.CoreWebView2;
+                core.RemoveScriptToExecuteOnDocumentCreated(startupScriptId);
+                startupScriptId = await core.AddScriptToExecuteOnDocumentCreatedAsync(StartupScript());
+                if (!disposed) core.Reload();
+            } catch (Exception ex) {
+                if (disposed) return;
+                LastError = ex.Message;
+                message.Text = "重试暂未启动，请返回游戏列表后再打开；已保存的成长保留。";
+                message.Visibility = Visibility.Visible; host.Notify(message.Text);
             }
         }
         private void Receive(object sender, CoreWebView2WebMessageReceivedEventArgs args)
@@ -92,6 +113,7 @@ namespace NezhaDesktop.MiniGames
                 else if (kind == "new-session") { resumeBlocked = false; initial = null; }
                 else if (kind == "resume-error") { resumeBlocked = true; host.Notify("续局格式不兼容，旧文件暂保留。请在游戏中点击新游戏重新开始。"); }
                 else if (kind == "ended") { host.StoreSession(null); initial = null; }
+                else if (kind == "retry") { RetryBrowser(); }
                 else if (kind == "error") { LastError = Convert.ToString(note["message"]); host.Notify("游戏提示：" + LastError); }
             } catch (Exception ex) { LastError = ex.Message; if (saveRequest != null) saveRequest.TrySetException(ex); else host.Notify("游戏消息未处理：" + ex.Message); }
         }

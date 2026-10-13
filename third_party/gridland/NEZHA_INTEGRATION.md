@@ -22,3 +22,12 @@ Copying the whole Nezha data directory is the supported desktop save transfer.
 2026-10-13: declare UTF-8 in the offline HTML document and desktop stylesheet.
 This fixes Chinese CSS-generated saving text being decoded as Windows-1252.
 The game rules, session format and original attribution remain unchanged.
+
+2026-10-13: desktop death feedback pauses on a Chinese retry dialog instead of
+silently restarting. The world still counts the death and retains the upstream
+growth checkpoint. Continue reloads the local page and starts in daylight as
+before; old animation callbacks cannot change the new board. The native host
+suppresses captures during this navigation and injects current pause/session data.
+A local browser flag preserves the pending dialog when the window is reopened;
+the defeated battle remains ended. Capturing during death cannot save zero HP
+over the retained growth checkpoint. Browser-only upstream behavior is retained.

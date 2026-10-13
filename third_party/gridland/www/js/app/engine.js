@@ -232,6 +232,7 @@ define(['jquery', 'app/eventmanager', 'app/analytics', 'app/graphics/graphics',
 			EventManager.bind('importSlot', importSlot);
 			EventManager.bind('pause', setPaused.bind(this, true));
 			EventManager.bind('unpause', function() {
+				if(window.NezhaDesktop && window.NezhaDesktop.waitingForRetry()) return;
 				if(window.nezhaHostPaused && !(window.NezhaDesktop && window.NezhaDesktop.saving)) return;
 				setPaused(false);
 				EventManager.trigger('afterUnpaused');
