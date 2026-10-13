@@ -37,7 +37,7 @@ namespace NezhaDesktop
                     string command = args[0];
                     bool reports = command == "--self-test" || command == "--preview" || command == "--native-smoke" || command == "--food-preview" || command == "--actions-preview" || command == "--update-test" || command == "--update-online-test" || command == "--minigame-test";
                     if (command == "--package-check" && args.Length == 3) reportDirectory = Path.GetFullPath(args[2]);
-                    else if (command == "--minigame-test" && args.Length == 3) reportDirectory = Path.GetFullPath(args[1]);
+                    else if ((command == "--minigame-test" || command == "--session-fixture") && args.Length == 3) reportDirectory = Path.GetFullPath(args[1]);
                     else if (reports && args.Length == 2) reportDirectory = Path.GetFullPath(args[1]);
                     else if (command != "--update-health" || args.Length != 2) throw new ArgumentException("启动参数无效。");
                 }
@@ -81,6 +81,7 @@ namespace NezhaDesktop
                     e.Handled = true; app.Shutdown(1);
                 };
                 if (args.Length > 0 && args[0] == "--minigame-test") return MiniGameTests.Run(app, reportDirectory, args.Length == 3 ? Path.GetFullPath(args[2]) : null);
+                if (args.Length > 0 && args[0] == "--session-fixture") return SessionGameTests.Fixture(reportDirectory, args[2]);
                 SpriteLibrary sprites = new SpriteLibrary(config, root);
                 if (args.Length > 0 && args[0] == "--update-health")
                 {

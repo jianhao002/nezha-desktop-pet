@@ -11,6 +11,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class MergeState { public int[] Cells; public int Score; public bool Announced; }
     public sealed class MergeBoard
     {
         public readonly int[] Cells = new int[16];
@@ -52,6 +53,12 @@ namespace NezhaGames
         }
         private static int Index(int direction, int line, int cell)
         { return direction == 0 ? line * 4 + cell : direction == 1 ? line * 4 + 3 - cell : direction == 2 ? cell * 4 + line : (3 - cell) * 4 + line; }
+        public static MergeBoard Restore(MergeState state)
+        {
+            MiniGameSession.Require(MiniGameSession.Range(state.Cells, 16, 0, 1073741824) && state.Cells.All(v => v == 0 || (v >= 2 && (v & (v - 1)) == 0)) && state.Score >= 0);
+            MergeBoard board = new MergeBoard(new Random()); Array.Copy(state.Cells, board.Cells, 16); board.Score = state.Score;
+            MiniGameSession.Require(!board.Ended); return board;
+        }
     }
     public sealed class MergeGame : MiniGameControl
     {
@@ -77,7 +84,7 @@ namespace NezhaGames
             bottom.Children.Add(arrows); Grid.SetRow(bottom, 2); layout.Children.Add(bottom);
             PreviewKeyDown += OnKey; NewGame(); return layout;
         }
-        private void NewGame() { Board = new MergeBoard(new Random()); announcedWin = false; message.Text = "方向键 / WASD · 也可以点击下方箭头"; Paint(); Focus(); }
+        private void NewGame() { NewSession(); Board = new MergeBoard(new Random()); announcedWin = false; message.Text = "方向键 / WASD · 也可以点击下方箭头"; Paint(); Focus(); }
         private void OnKey(object sender, KeyEventArgs e)
         {
             int direction;
@@ -109,6 +116,9 @@ namespace NezhaGames
             score.Text = "本局 " + Board.Score + " · 最佳 " + Host.Best("best", 0);
         }
         public override void SetHostPaused(bool value) { paused = value; }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Ended ? null : new MergeState { Cells = Board.Cells, Score = Board.Score, Announced = announcedWin }; }
+        protected override void RestoreSession(string json) { MergeState state = MiniGameSession.Read<MergeState>(json); Board = MergeBoard.Restore(state); announcedWin = state.Announced; Paint(); }
         public override void Dispose() { PreviewKeyDown -= OnKey; }
     }
 }

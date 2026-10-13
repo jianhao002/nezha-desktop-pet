@@ -12,6 +12,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class BreakoutState { public int Tier, Lives, Score; public bool[] Bricks; public double Paddle, BallX, BallY, VX, VY; public bool Serving; }
     public sealed class BreakoutBoard
     {
         public const double Width = 300, Height = 360, Radius = 4, PaddleY = 334, PaddleWidth = 64;
@@ -54,6 +55,13 @@ namespace NezhaGames
                 if (BallY > Height + Radius) { Lives--; ResetBall(); }
             }
         }
+        public BreakoutState Capture(int tier) { return new BreakoutState { Tier = tier, Lives = Lives, Score = Score, Bricks = Bricks, Paddle = Paddle, BallX = BallX, BallY = BallY, VX = VX, VY = VY, Serving = Serving }; }
+        public void Restore(BreakoutState state)
+        {
+            MiniGameSession.Require(state.Bricks != null && state.Bricks.Length == Bricks.Length && state.Bricks.Any(v => v) && state.Lives >= 1 && state.Lives <= 3 && state.Score == state.Bricks.Count(v => !v) * 10);
+            MiniGameSession.Require(new[] { state.Paddle, state.BallX, state.BallY, state.VX, state.VY }.All(v => !Double.IsNaN(v) && !Double.IsInfinity(v)) && state.Paddle >= 32 && state.Paddle <= Width - 32 && state.BallX >= Radius && state.BallX <= Width-Radius && state.BallY >= 0 && state.BallY <= Height+Radius && Math.Abs(Math.Sqrt(state.VX*state.VX + state.VY*state.VY) - Speed) < 1);
+            Array.Copy(state.Bricks, Bricks, Bricks.Length); Lives = state.Lives; Score = state.Score; Paddle = state.Paddle; BallX = state.BallX; BallY = state.BallY; VX = state.VX; VY = state.VY; Serving = state.Serving;
+        }
     }
     public sealed class BreakoutGame : MiniGameControl
     {
@@ -80,7 +88,7 @@ namespace NezhaGames
             Grid.SetRow(arrows, 3); layout.Children.Add(arrows); message = Ui.Text("", 11, Ui.Muted); message.Margin = new Thickness(0, 6, 0, 0); Grid.SetRow(message, 4); layout.Children.Add(message);
             timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) }; timer.Tick += OnTick; PreviewKeyDown += OnKey; PreviewKeyUp += OnKeyUp; NewGame(); return layout;
         }
-        private void NewGame() { timer.Stop(); tier = Math.Max(0, difficulty.SelectedIndex); Board = new BreakoutBoard(3 + tier, new[] { 190.0, 240.0, 290.0 }[tier]); direction = 0; recorded = false; manualPaused = true; ApplyPause(); }
+        private void NewGame() { NewSession(); timer.Stop(); tier = Math.Max(0, difficulty.SelectedIndex); Board = new BreakoutBoard(3 + tier, new[] { 190.0, 240.0, 290.0 }[tier]); direction = 0; recorded = false; manualPaused = true; ApplyPause(); }
         private void Toggle() { if (Board.Ended) NewGame(); if (Board.Serving) { Board.Launch(); manualPaused = false; } else manualPaused = !manualPaused; ApplyPause(); Focus(); }
         private void OnKey(object sender, KeyEventArgs e)
         {
@@ -108,6 +116,10 @@ namespace NezhaGames
             message.Text = Board.Won ? "砖块清空啦！" : Board.Ended ? "机会用完了，再开一局吧。" : Paused ? "已暂停 · 点击发球 / 继续，或按空格" : Board.Serving ? "按空格发球 · 还剩 " + Board.Lives + " 次机会" : "鼠标 / ← → 控制挡板 · 空格暂停";
         }
         public override void SetHostPaused(bool value) { hostPaused = value; direction = 0; if (timer != null) ApplyPause(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Ended ? null : Board.Capture(tier); }
+        protected override void RestoreSession(string json)
+        { BreakoutState state = MiniGameSession.Read<BreakoutState>(json); MiniGameSession.Require(state.Tier >= 0 && state.Tier < 3); BreakoutBoard restored = new BreakoutBoard(3+state.Tier, new[] {190.0,240.0,290.0}[state.Tier]); restored.Restore(state); difficulty.SelectedIndex = state.Tier; NewGame(); Board = restored; ApplyPause(); }
         public override void Dispose() { disposed = true; if (timer != null) { timer.Stop(); timer.Tick -= OnTick; } PreviewKeyDown -= OnKey; PreviewKeyUp -= OnKeyUp; if (canvas != null) canvas.MouseMove -= OnMouse; }
     }
 }

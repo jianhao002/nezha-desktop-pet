@@ -11,6 +11,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class GomokuState { public int Size, Level, Last; public int[] Cells; }
     public sealed class GomokuBoard
     {
         public readonly int Size;
@@ -67,6 +68,12 @@ namespace NezhaGames
             }
             return choices[random.Next(choices.Count)];
         }
+        public static GomokuBoard Restore(GomokuState state)
+        {
+            MiniGameSession.Require(new[]{9,13,15}.Contains(state.Size) && MiniGameSession.Range(state.Cells,state.Size*state.Size,0,2) && state.Cells.Count(v=>v==1)==state.Cells.Count(v=>v==2) && state.Last>=-1 && state.Last<state.Cells.Length);
+            GomokuBoard board=new GomokuBoard(state.Size); Array.Copy(state.Cells,board.Cells,state.Cells.Length); board.Moves=state.Cells.Count(v=>v!=0); board.Last=state.Last;
+            MiniGameSession.Require((board.Moves==0?state.Last==-1:state.Last>=0 && state.Cells[state.Last]==2) && !Enumerable.Range(0,state.Cells.Length).Any(i=>state.Cells[i]!=0 && board.Wins(i,state.Cells[i]))); return board;
+        }
     }
     public sealed class GomokuGame : MiniGameControl
     {
@@ -88,7 +95,7 @@ namespace NezhaGames
             message = Ui.Text("", 12, Ui.Muted); Grid.SetRow(message, 3); layout.Children.Add(message); NewGame(); return layout;
         }
         private string ScoreKey { get { return "moves-" + Board.Size + "-" + level; } }
-        private void NewGame() { Board = new GomokuBoard(new[] { 9, 13, 15 }[Math.Max(0, size.SelectedIndex)]); level = Math.Max(0, opponent.SelectedIndex); recorded = false; Paint(); }
+        private void NewGame() { NewSession(); Board = new GomokuBoard(new[] { 9, 13, 15 }[Math.Max(0, size.SelectedIndex)]); level = Math.Max(0, opponent.SelectedIndex); recorded = false; Paint(); }
         private void Play(int index)
         {
             if (paused || !Board.Play(index, 1)) return;
@@ -110,6 +117,9 @@ namespace NezhaGames
             message.Text = Board.Winner == 1 ? "你连成五子啦！" : Board.Winner == 2 ? "电脑先连成五子，再来一局吧。" : Board.Winner == 3 ? "棋盘满了，平局。" : paused ? "已暂停" : "你执黑先行 · 横、竖、斜连五子获胜 · 无禁手";
         }
         public override void SetHostPaused(bool value) { paused = value; if (Board != null) Paint(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Ended ? null : new GomokuState {Size=Board.Size,Level=level,Last=Board.Last,Cells=Board.Cells}; }
+        protected override void RestoreSession(string json) { GomokuState state=MiniGameSession.Read<GomokuState>(json); MiniGameSession.Require(state.Level>=0 && state.Level<3); Board=GomokuBoard.Restore(state); level=state.Level; size.SelectedIndex=Array.IndexOf(new[]{9,13,15},Board.Size); opponent.SelectedIndex=level; recorded=false; Paint(); }
         public override void Dispose() { }
     }
 }

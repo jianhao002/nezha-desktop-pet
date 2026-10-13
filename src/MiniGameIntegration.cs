@@ -21,6 +21,9 @@ namespace NezhaDesktop
                 miniGameHotkey = RegisterHotKey(handle, MiniGameHotkeyId, 0x4003, 0x48); // Ctrl+Alt+H, no repeat
                 if (miniGameHotkey) HwndSource.FromHwnd(handle).AddHook(MiniGameHotkeyHook);
             };
+            Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) {
+                if (miniGameWindow != null && !miniGameWindow.SaveActiveSession()) { e.Cancel = true; miniGameWindow.Restore(); }
+            };
             Closed += delegate {
                 if (miniGameWindow != null) miniGameWindow.Close();
                 if (miniGameHotkey) UnregisterHotKey(new WindowInteropHelper(this).Handle, MiniGameHotkeyId);
@@ -41,6 +44,10 @@ namespace NezhaDesktop
                 miniGameWindow.Closed += delegate { miniGameWindow = null; };
             }
             miniGameWindow.Restore();
+        }
+        public void SaveMiniGameSession()
+        {
+            if (miniGameWindow != null && !miniGameWindow.SaveActiveSession()) throw new IOException("小游戏本局尚未保存，请恢复目录写入后再退出或更新。");
         }
     }
 }

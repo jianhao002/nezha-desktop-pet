@@ -1,0 +1,1 @@
+{"apiVersion":1,"id":"link-match","name":"莲宝连连看","description":"连接相同莲宝，最多两次转弯。三档棋盘、不倒计时，支持提示和洗牌。","author":"焰轮哪吒","entryType":"NezhaGames.LinkMatchGame","sources":["Game.cs"]}

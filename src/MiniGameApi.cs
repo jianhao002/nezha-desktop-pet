@@ -17,6 +17,30 @@ namespace NezhaDesktop.MiniGames
         void SetHostPaused(bool paused);
     }
 
+    // Optional capability: existing local extensions keep the v1 interface.
+    public interface IMiniGameSession
+    {
+        bool CanResume { get; }
+        void SaveSession();
+    }
+    public sealed class MiniGameSessionRecord
+    {
+        public int Version { get; set; }
+        public string State { get; set; }
+    }
+    public static class MiniGameSession
+    {
+        public static T Read<T>(string json) where T : class
+        {
+            Require(json != null && json.Length <= 262144);
+            T state = new JavaScriptSerializer { MaxJsonLength = 262144, RecursionLimit = 32 }.Deserialize<T>(json);
+            Require(state != null); return state;
+        }
+        public static void Require(bool valid) { if (!valid) throw new InvalidDataException("本局存档格式或数值无效。"); }
+        public static bool Range(int[] items, int count, int min, int max)
+        { return items != null && items.Length == count && Array.TrueForAll(items, v => v >= min && v <= max); }
+    }
+
     public sealed class PetSnapshot
     {
         public readonly string Name;
@@ -61,13 +85,48 @@ namespace NezhaDesktop.MiniGames
             if (records != null) return;
             records = MiniGameFiles.ReadJson<Dictionary<string, int>>(Path.Combine(directory, "records.json")) ?? new Dictionary<string, int>();
         }
+        public string LoadSession()
+        {
+            string path = Path.Combine(directory, "session.json");
+            MiniGameSessionRecord record = MiniGameFiles.ReadJson<MiniGameSessionRecord>(path);
+            if (record == null) {
+                if (File.Exists(path) || File.Exists(path + ".bak")) throw new InvalidDataException("本局存档无法读取。");
+                return null;
+            }
+            MiniGameSession.Require(record.Version == 1); return record.State;
+        }
+        public void StoreSession(object state)
+        {
+            string json = state == null ? null : new JavaScriptSerializer { MaxJsonLength = 262144, RecursionLimit = 32 }.Serialize(state);
+            // A null payload is an explicit finished-game marker; never resurrect .bak.
+            MiniGameFiles.WriteJson(Path.Combine(directory, "session.json"), new MiniGameSessionRecord { Version = 1, State = json });
+        }
     }
 
-    public abstract class MiniGameControl : UserControl, IMiniGame
+    public abstract class MiniGameControl : UserControl, IMiniGame, IMiniGameSession
     {
         protected MiniGameContext Host { get; private set; }
         public FrameworkElement View { get { return this; } }
-        public void Initialize(MiniGameContext context) { Host = context; Content = Build(); Focusable = true; }
+        private bool resumeBlocked;
+        private string lastSaved;
+        public virtual bool CanResume { get { return false; } }
+        public void Initialize(MiniGameContext context)
+        {
+            Host = context; Content = Build(); Focusable = true;
+            if (!CanResume) return;
+            try { string state = Host.LoadSession(); if (state != null) { SetHostPaused(true); RestoreSession(state); Host.Notify("已继续上一局；动态游戏点击继续后开始。"); } }
+            catch (Exception ex) { resumeBlocked = true; Host.Notify("续局未读取：" + ex.Message + " 点击新一局可重新开始，旧存档暂保留。"); }
+        }
+        protected void NewSession() { resumeBlocked = false; lastSaved = null; }
+        protected virtual object CaptureSession() { return null; }
+        protected virtual void RestoreSession(string json) { }
+        public void SaveSession()
+        {
+            if (!CanResume || resumeBlocked) return;
+            object state = CaptureSession(); string stamp = new JavaScriptSerializer().Serialize(state);
+            if (stamp == lastSaved) return;
+            Host.StoreSession(state); lastSaved = stamp;
+        }
         protected abstract UIElement Build();
         public abstract void SetHostPaused(bool paused);
         public abstract void Dispose();

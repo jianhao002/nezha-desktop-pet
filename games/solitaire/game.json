@@ -1,0 +1,1 @@
+{"apiVersion":1,"id":"solitaire","name":"纸牌接龙","description":"经典接龙：单张或三张翻牌，交替颜色降序排列，支持撤销和提示。","author":"焰轮哪吒","entryType":"NezhaGames.SolitaireGame","sources":["Game.cs"]}

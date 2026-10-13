@@ -1,0 +1,1 @@
+{"apiVersion":1,"id":"same-game","name":"莲火消消乐","description":"点击相邻同色方块成片消除。三档颜色与棋盘，支持撤销，不倒计时。","author":"焰轮哪吒","entryType":"NezhaGames.SameGame","sources":["Game.cs"]}

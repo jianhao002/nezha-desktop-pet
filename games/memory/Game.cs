@@ -10,6 +10,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class MemoryState { public int[] Cards; public bool[] Open, Matched; public int First, Second, Turns; }
     public sealed class MemoryBoard
     {
         public readonly int[] Cards;
@@ -35,6 +36,14 @@ namespace NezhaGames
             return true;
         }
         public void Resolve() { if (!Pending) return; Open[First] = Open[Second] = false; First = Second = -1; }
+        public static MemoryBoard Restore(MemoryState state)
+        {
+            MiniGameSession.Require(state.Cards != null && new[] {12,16,24}.Contains(state.Cards.Length) && state.Open != null && state.Matched != null && state.Open.Length == state.Cards.Length && state.Matched.Length == state.Cards.Length && state.Turns >= 0);
+            int count = state.Cards.Length; MiniGameSession.Require(state.Cards.All(v => v >= 0 && v < count/2) && state.Cards.GroupBy(v => v).All(g => g.Count() == 2) && state.First >= -1 && state.First < count && state.Second >= -1 && state.Second < count && (state.Second < 0 || state.First >= 0 && state.First != state.Second && state.Cards[state.First] != state.Cards[state.Second]));
+            for (int i = 0; i < count; i++) MiniGameSession.Require(state.Open[i] == (state.Matched[i] || i == state.First || i == state.Second) && (i != state.First && i != state.Second || !state.Matched[i]));
+            MiniGameSession.Require(Enumerable.Range(0,count).GroupBy(i => state.Cards[i]).All(g => g.All(i => state.Matched[i]) || g.All(i => !state.Matched[i])));
+            MemoryBoard board = new MemoryBoard(count/2,new Random()); Array.Copy(state.Cards,board.Cards,count); Array.Copy(state.Open,board.Open,count); Array.Copy(state.Matched,board.Matched,count); board.First=state.First; board.Second=state.Second; board.Turns=state.Turns; board.Pairs=state.Matched.Count(v=>v)/2; return board;
+        }
     }
     public sealed class MemoryGame : MiniGameControl
     {
@@ -55,7 +64,7 @@ namespace NezhaGames
             message = Ui.Text("", 12, Ui.Muted); Grid.SetRow(message, 3); layout.Children.Add(message);
             timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(750) }; timer.Tick += OnResolve; NewGame(); return layout;
         }
-        private void NewGame() { timer.Stop(); Board = new MemoryBoard(new[] { 6, 8, 12 }[Math.Max(0, difficulty.SelectedIndex)], new Random()); recorded = false; Paint(); }
+        private void NewGame() { NewSession(); timer.Stop(); Board = new MemoryBoard(new[] { 6, 8, 12 }[Math.Max(0, difficulty.SelectedIndex)], new Random()); recorded = false; Paint(); }
         private void Flip(int index)
         {
             if (paused || disposed || !Board.Flip(index)) return;
@@ -77,6 +86,9 @@ namespace NezhaGames
             message.Text = Board.Won ? "全部配对成功！哪吒为你记住了这一局。" : paused ? "已暂停，当前翻开的牌会保留。" : "每次翻两张，找到相同的汉字。";
         }
         public override void SetHostPaused(bool value) { paused = value; if (timer == null) return; timer.Stop(); if (!paused && !disposed && Board.Pending) timer.Start(); Paint(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Won ? null : new MemoryState { Cards=Board.Cards, Open=Board.Open, Matched=Board.Matched, First=Board.First, Second=Board.Second, Turns=Board.Turns }; }
+        protected override void RestoreSession(string json) { Board=MemoryBoard.Restore(MiniGameSession.Read<MemoryState>(json)); difficulty.SelectedIndex=Array.IndexOf(new[]{12,16,24},Board.Cards.Length); recorded=false; Paint(); }
         public override void Dispose() { disposed = true; if (timer != null) { timer.Stop(); timer.Tick -= OnResolve; } }
     }
 }

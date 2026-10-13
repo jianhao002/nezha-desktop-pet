@@ -11,6 +11,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class SudokuState { public int Tier, Selected, Seconds, Hints; public int[] Cells, Solution; public bool[] Given; public bool Started; }
     public sealed class SudokuBoard
     {
         public readonly int[] Cells = new int[81], Solution = new int[81];
@@ -67,6 +68,13 @@ namespace NezhaGames
             if (index < 0 || index >= 81 || Cells[index] == 0) return false;
             return Enumerable.Range(0, 81).Any(i => i != index && Cells[i] == Cells[index] && (i / 9 == index / 9 || i % 9 == index % 9 || Box(i) == Box(index)));
         }
+        private SudokuBoard() { }
+        public static SudokuBoard Restore(SudokuState state)
+        {
+            MiniGameSession.Require(MiniGameSession.Range(state.Cells,81,0,9) && MiniGameSession.Range(state.Solution,81,1,9) && state.Given != null && state.Given.Length==81 && state.Given.Count(v=>v)>=26 && CountSolutions(state.Solution,1)==1 && !Enumerable.Range(0,81).Any(i=>state.Given[i] && state.Cells[i]!=state.Solution[i]));
+            int[] clues=Enumerable.Range(0,81).Select(i=>state.Given[i]?state.Solution[i]:0).ToArray(); MiniGameSession.Require(CountSolutions(clues,2)==1);
+            SudokuBoard board=new SudokuBoard(); Array.Copy(state.Cells,board.Cells,81); Array.Copy(state.Solution,board.Solution,81); Array.Copy(state.Given,board.Given,81); return board;
+        }
     }
     public sealed class SudokuGame : MiniGameControl
     {
@@ -93,7 +101,7 @@ namespace NezhaGames
             Grid.SetRow(numbers, 3); layout.Children.Add(numbers); message = Ui.Text("", 11, Ui.Muted); message.Margin = new Thickness(0, 6, 0, 0); Grid.SetRow(message, 4); layout.Children.Add(message);
             timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) }; timer.Tick += OnTick; PreviewKeyDown += OnKey; NewGame(); return layout;
         }
-        private void NewGame() { timer.Stop(); tier = Math.Max(0, difficulty.SelectedIndex); Board = new SudokuBoard(new[] { 46, 40, 34, 30 }[tier], new Random()); selected = Array.FindIndex(Board.Given, v => !v); started = recorded = false; Hints = ElapsedSeconds = 0; Paint(); }
+        private void NewGame() { NewSession(); timer.Stop(); tier = Math.Max(0, difficulty.SelectedIndex); Board = new SudokuBoard(new[] { 46, 40, 34, 30 }[tier], new Random()); selected = Array.FindIndex(Board.Given, v => !v); started = recorded = false; Hints = ElapsedSeconds = 0; Paint(); }
         private void OnTick(object sender, EventArgs e) { if (!paused && !disposed && !Board.Won) { ElapsedSeconds++; PaintScore(); } }
         private void Input(int value, bool hint)
         {
@@ -134,6 +142,10 @@ namespace NezhaGames
             PaintScore(); message.Text = Board.Won ? Hints == 0 ? "完成啦！这一局已计入最佳成绩。" : "练习完成！使用提示的本局不计最佳。" : paused ? "已暂停" : "每行、列、九宫格填 1～9；提示仅计练习。";
         }
         public override void SetHostPaused(bool value) { paused = value; if (timer == null) return; timer.Stop(); if (!paused && started && !Board.Won && !disposed) timer.Start(); Paint(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Won ? null : new SudokuState {Tier=tier,Selected=selected,Seconds=ElapsedSeconds,Hints=Hints,Cells=Board.Cells,Solution=Board.Solution,Given=Board.Given,Started=started}; }
+        protected override void RestoreSession(string json)
+        { SudokuState state=MiniGameSession.Read<SudokuState>(json); MiniGameSession.Require(state.Tier>=0 && state.Tier<4 && state.Selected>=0 && state.Selected<81 && state.Seconds>=0 && state.Seconds<Int32.MaxValue-100 && state.Hints>=0 && state.Hints<Int32.MaxValue-100); SudokuBoard restored=SudokuBoard.Restore(state); Board=restored; tier=state.Tier; selected=state.Selected; ElapsedSeconds=state.Seconds; Hints=state.Hints; started=state.Started; difficulty.SelectedIndex=tier; recorded=false; Paint(); }
         public override void Dispose() { disposed = true; if (timer != null) { timer.Stop(); timer.Tick -= OnTick; } PreviewKeyDown -= OnKey; }
     }
 }

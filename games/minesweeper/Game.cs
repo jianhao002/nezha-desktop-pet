@@ -13,6 +13,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class MinesState { public int Tier; public bool Generated, ManualPaused; public bool[] Mines, Open, Flags; public long Milliseconds; }
     public sealed class MinesBoard
     {
         public readonly int Width, Height, MineCount;
@@ -74,6 +75,17 @@ namespace NezhaGames
             Generated = true;
         }
         private void Check(int index) { if (index < 0 || index >= Mines.Length) throw new ArgumentOutOfRangeException("index"); }
+        public void Restore(MinesState state)
+        {
+            int count = Mines.Length;
+            MiniGameSession.Require(state.Mines != null && state.Open != null && state.Flags != null && state.Mines.Length == count && state.Open.Length == count && state.Flags.Length == count && state.Flags.Count(v => v) <= MineCount);
+            MiniGameSession.Require(state.Generated ? state.Mines.Count(v => v) == MineCount : !state.Mines.Any(v => v) && !state.Open.Any(v => v));
+            MiniGameSession.Require(!Enumerable.Range(0, count).Any(i => state.Open[i] && (state.Mines[i] || state.Flags[i])));
+            Array.Copy(state.Mines, Mines, count); Array.Copy(state.Open, Open, count); Array.Copy(state.Flags, Flags, count);
+            Generated = state.Generated; FlagCount = Flags.Count(v => v); OpenCount = Open.Count(v => v);
+            for (int i = 0; i < count; i++) Adjacent[i] = Neighbors(i).Count(n => Mines[n]);
+            MiniGameSession.Require(OpenCount < count - MineCount);
+        }
     }
 
     public sealed class MinesDifficulty
@@ -103,6 +115,8 @@ namespace NezhaGames
         private Button pause;
         private ComboBox difficulty;
         private bool hostPaused, manualPaused, scored;
+        private long restoredMilliseconds;
+        private long ElapsedMilliseconds { get { return restoredMilliseconds + clock.ElapsedMilliseconds; } }
         protected override UIElement Build()
         {
             Grid layout = new Grid();
@@ -123,6 +137,7 @@ namespace NezhaGames
         }
         private void NewGame()
         {
+            NewSession(); restoredMilliseconds = 0;
             MinesDifficulty chosen = Difficulties[Math.Max(0, difficulty.SelectedIndex)];
             int width = chosen.Size; ScoreKey = chosen.ScoreKey;
             Board = new MinesBoard(width, width, chosen.MineCount, new Random());
@@ -153,7 +168,7 @@ namespace NezhaGames
                 clock.Stop(); message.Text = "全部排除！哪吒为你鼓掌。";
                 if (!scored) {
                     scored = true;
-                    try { if (Host.Record(ScoreKey, Math.Max(1, (int)Math.Min(Int32.MaxValue, clock.ElapsedMilliseconds)), true)) message.Text += " 新纪录！"; }
+                    try { if (Host.Record(ScoreKey, Math.Max(1, (int)Math.Min(Int32.MaxValue, ElapsedMilliseconds)), true)) message.Text += " 新纪录！"; }
                     catch (Exception ex) { message.Text += " 成绩未保存：" + ex.Message; }
                 }
             }
@@ -175,7 +190,7 @@ namespace NezhaGames
         private void UpdateCounter()
         {
             int best = Host.Best(ScoreKey, 0);
-            counter.Text = "余雷 " + (Board.MineCount - Board.FlagCount) + "   ·   " + (int)clock.Elapsed.TotalSeconds + " 秒" + (best > 0 ? "   ·   最快 " + (best / 1000.0).ToString("0.0") + " 秒" : "");
+            counter.Text = "余雷 " + (Board.MineCount - Board.FlagCount) + "   ·   " + ElapsedMilliseconds / 1000 + " 秒" + (best > 0 ? "   ·   最快 " + (best / 1000.0).ToString("0.0") + " 秒" : "");
         }
         private void ApplyPause()
         {
@@ -184,6 +199,14 @@ namespace NezhaGames
             grid.IsEnabled = !Paused; pause.Content = manualPaused ? "继续" : "暂停";
         }
         public override void SetHostPaused(bool paused) { hostPaused = paused; if (grid != null) ApplyPause(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Won || Board.Lost ? null : new MinesState { Tier = Array.FindIndex(Difficulties, d => d.ScoreKey == ScoreKey), Generated = Board.Generated, Mines = Board.Mines, Open = Board.Open, Flags = Board.Flags, Milliseconds = ElapsedMilliseconds, ManualPaused = manualPaused }; }
+        protected override void RestoreSession(string json)
+        {
+            MinesState state = MiniGameSession.Read<MinesState>(json); MiniGameSession.Require(state.Tier >= 0 && state.Tier < Difficulties.Length && state.Milliseconds >= 0 && state.Milliseconds <= 31536000000L);
+            MinesDifficulty selected = Difficulties[state.Tier]; MinesBoard restored = new MinesBoard(selected.Size, selected.Size, selected.MineCount, new Random()); restored.Restore(state);
+            difficulty.SelectedIndex = state.Tier; NewGame(); Board = restored; restoredMilliseconds = state.Milliseconds; manualPaused = state.ManualPaused; Paint(); ApplyPause();
+        }
         public override void Dispose() { if (timer != null) timer.Stop(); clock.Stop(); }
     }
 }

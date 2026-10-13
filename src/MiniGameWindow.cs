@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using NezhaDesktop.MiniGames;
 
 namespace NezhaDesktop
@@ -36,6 +37,8 @@ namespace NezhaDesktop
         private IMiniGame active;
         private int generation;
         private bool closed, initializing = true;
+        private readonly DispatcherTimer sessionTimer;
+        private bool sessionSaveWarning;
         public FrameworkElement PreviewRoot { get; private set; }
         public IMiniGame ActiveGame { get { return active; } }
         public bool HostPaused { get { return !IsVisible || (preferences.PauseOnBlur && !IsActive); } }
@@ -82,7 +85,11 @@ namespace NezhaDesktop
             Deactivated += delegate { PauseActive(); };
             IsVisibleChanged += delegate { PauseActive(); };
             PreviewKeyDown += delegate(object sender, KeyEventArgs e) { if (e.Key == Key.Escape) { QuickHide(); e.Handled = true; } };
-            Closed += delegate { closed = true; generation++; DisposeActive(); windows.Remove(this); SavePreferences(); };
+            sessionTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            sessionTimer.Tick += delegate { SaveActiveSession(); };
+            Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { if (!SaveActiveSession()) e.Cancel = true; };
+            Closed += delegate { closed = true; generation++; sessionTimer.Stop(); DisposeActive(false); windows.Remove(this); SavePreferences(); };
+            sessionTimer.Start();
             ApplyMode(false); initializing = false; windows.Add(this); ShowCatalog();
         }
         private void ApplyMode(bool preset)
@@ -100,22 +107,30 @@ namespace NezhaDesktop
             try { MiniGameFiles.WriteJson(preferencesFile, preferences); }
             catch (Exception ex) { status.Text = "窗口设置未保存：" + ex.Message; }
         }
-        public void QuickHide() { if (active != null) SafePause(true); Hide(); SavePreferences(); }
+        public void QuickHide() { if (active != null) SafePause(true); SaveActiveSession(); Hide(); SavePreferences(); }
         public void Restore() { if (!IsVisible) Show(); Activate(); PauseActive(); }
-        private void PauseActive() { if (active != null) SafePause(HostPaused); }
+        private void PauseActive() { if (active != null) { SafePause(HostPaused); if (HostPaused) SaveActiveSession(); } }
         private void SafePause(bool paused)
         {
             try { active.SetHostPaused(paused); }
             catch (Exception ex) { GameFailed(ex); }
         }
-        private void DisposeActive()
+        public bool SaveActiveSession()
         {
+            IMiniGameSession session = active as IMiniGameSession;
+            try { if (session != null) session.SaveSession(); sessionSaveWarning = false; return true; }
+            catch (Exception ex) { if (!sessionSaveWarning) status.Text = "本局未保存：" + ex.Message + " 请恢复目录写入后重试；当前游戏仍保留。"; sessionSaveWarning = true; return false; }
+        }
+        private bool DisposeActive(bool save = true)
+        {
+            if (save && !SaveActiveSession()) return false;
             IMiniGame previous = active; active = null; gameArea.Children.Clear();
             if (previous != null) { try { previous.Dispose(); } catch { } }
+            return true;
         }
         public void ShowCatalog()
         {
-            generation++; DisposeActive(); heading.Text = "哪吒 · 休闲小窗"; back.IsEnabled = false;
+            if (!DisposeActive()) return; generation++; heading.Text = "哪吒 · 休闲小窗"; back.IsEnabled = false;
             StackPanel list = new StackPanel();
             try {
                 foreach (MiniGameEntry entry in catalog.Scan())
@@ -135,7 +150,7 @@ namespace NezhaDesktop
         }
         public async void StartGame(MiniGameEntry entry)
         {
-            int ticket = ++generation; DisposeActive(); back.IsEnabled = true; heading.Text = entry.Manifest.Name;
+            if (!DisposeActive()) return; int ticket = ++generation; back.IsEnabled = true; heading.Text = entry.Manifest.Name;
             gameArea.Children.Add(Ui.Text("准备游戏…", 14, Ui.Muted));
             try {
                 Type type = await Task.Run(delegate { return catalog.Compile(entry); });
@@ -146,12 +161,12 @@ namespace NezhaDesktop
         }
         public void StartForTest(MiniGameEntry entry)
         {
-            generation++; DisposeActive(); active = catalog.Create(entry, snapshot, delegate(string text) { status.Text = text; });
+            if (!DisposeActive()) return; generation++; active = catalog.Create(entry, snapshot, delegate(string text) { status.Text = text; });
             heading.Text = entry.Manifest.Name; back.IsEnabled = true; gameArea.Children.Add(active.View); SafePause(HostPaused);
         }
         private void GameFailed(Exception ex)
         {
-            generation++; DisposeActive(); back.IsEnabled = true;
+            generation++; DisposeActive(false); back.IsEnabled = true;
             gameArea.Children.Add(Ui.Text("这个游戏暂时无法运行：" + ex.Message + "\n可以返回列表打开其他游戏。", 13, Ui.Red));
         }
         public static bool HandlePluginFailure(Exception exception)
