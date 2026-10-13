@@ -9,6 +9,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class SlidingState { public int Size, Moves; public int[] Cells; }
     public sealed class SlidingBoard
     {
         public readonly int Size;
@@ -32,6 +33,13 @@ namespace NezhaGames
         private void Swap(int index) { Cells[Blank] = Cells[index]; Cells[index] = 0; Blank = index; }
         public bool Move(int index)
         { if (Won || !Adjacent(index)) return false; Swap(index); Moves++; return true; }
+        public static SlidingBoard Restore(SlidingState state)
+        {
+            MiniGameSession.Require(state.Size >= 3 && state.Size <= 5 && state.Moves >= 0 && MiniGameSession.Range(state.Cells, state.Size * state.Size, 0, state.Size * state.Size - 1) && state.Cells.Distinct().Count() == state.Cells.Length);
+            SlidingBoard board = new SlidingBoard(state.Size, new Random()); Array.Copy(state.Cells, board.Cells, state.Cells.Length); board.Blank = Array.IndexOf(board.Cells, 0); board.Moves = state.Moves;
+            int inversions = 0; for (int i = 0; i < board.Cells.Length; i++) for (int j = i + 1; j < board.Cells.Length; j++) if (board.Cells[i] > 0 && board.Cells[j] > 0 && board.Cells[i] > board.Cells[j]) inversions++;
+            MiniGameSession.Require(state.Size % 2 == 1 ? inversions % 2 == 0 : (inversions + state.Size - board.Blank / state.Size) % 2 == 1); return board;
+        }
     }
     public sealed class SlidingGame : MiniGameControl
     {
@@ -52,7 +60,7 @@ namespace NezhaGames
             message = Ui.Text("", 12, Ui.Muted); Grid.SetRow(message, 3); layout.Children.Add(message);
             PreviewKeyDown += OnKey; NewGame(); return layout;
         }
-        private void NewGame() { Board = new SlidingBoard(size.SelectedIndex + 3, new Random()); recorded = false; Paint(); Focus(); }
+        private void NewGame() { NewSession(); Board = new SlidingBoard(size.SelectedIndex + 3, new Random()); recorded = false; Paint(); Focus(); }
         private void Move(int index)
         {
             if (paused || !Board.Move(index)) return;
@@ -79,6 +87,9 @@ namespace NezhaGames
             message.Text = Board.Won ? "数字归位啦！可以换一个棋盘挑战。" : paused ? "已暂停" : "按顺序排列数字，把空格留在右下角。";
         }
         public override void SetHostPaused(bool value) { paused = value; if (Board != null) Paint(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Won ? null : new SlidingState { Size = Board.Size, Moves = Board.Moves, Cells = Board.Cells }; }
+        protected override void RestoreSession(string json) { Board = SlidingBoard.Restore(MiniGameSession.Read<SlidingState>(json)); size.SelectedIndex = Board.Size - 3; recorded = false; Paint(); }
         public override void Dispose() { PreviewKeyDown -= OnKey; }
     }
 }

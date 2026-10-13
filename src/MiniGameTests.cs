@@ -56,8 +56,8 @@ namespace NezhaDesktop
                 try { body(); results.Add("PASS " + name); } catch (Exception ex) { results.Add("FAIL " + name + ": " + ex.Message); }
             };
             MiniGameCatalog catalog = new MiniGameCatalog(root, data); List<MiniGameEntry> entries = catalog.Scan();
-            test("nine-folder-discovery-without-registration", delegate {
-                Check(entries.Select(e => e.Manifest.Id).OrderBy(s => s).SequenceEqual(new[] { "2048", "breakout", "gomoku", "memory", "minesweeper", "sliding-puzzle", "snake", "sudoku", "tetris" }), "missing bundled games");
+            test("thirteen-folder-discovery-without-registration", delegate {
+                Check(entries.Select(e => e.Manifest.Id).OrderBy(s => s).SequenceEqual(new[] { "2048", "breakout", "gomoku", "link-match", "memory", "minesweeper", "net-lights", "same-game", "sliding-puzzle", "snake", "solitaire", "sudoku", "tetris" }), "missing bundled games");
                 Check(catalog.Errors.Count == 0, String.Join(";", catalog.Errors));
             });
             Dictionary<string, IMiniGame> games = new Dictionary<string, IMiniGame>();
@@ -70,6 +70,8 @@ namespace NezhaDesktop
                 });
             }
             ExpandedGameTests.Run(test, games);
+            NewGameTests.Run(test, games);
+            SessionGameTests.Run(test, root, output, entries);
             if (games.ContainsKey("minesweeper")) {
                 Assembly plugin = games["minesweeper"].GetType().Assembly;
                 test("mines-five-ui-difficulties-safe-first-click-and-separate-records", delegate {

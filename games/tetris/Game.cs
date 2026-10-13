@@ -13,6 +13,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class BlockState { public int Tier, Kind, NextKind, X, Y, Score, Lines; public int[] Cells, Shape, Bag; }
     public sealed class BlockBoard
     {
         public const int Width = 10, Height = 20;
@@ -76,6 +77,14 @@ namespace NezhaGames
             }
             return removed;
         }
+        public BlockState Capture(int tier) { return new BlockState { Tier = tier, Kind = Kind, NextKind = NextKind, X = X, Y = Y, Score = Score, Lines = Lines, Cells = Cells, Shape = shape, Bag = bag.ToArray() }; }
+        public static BlockBoard Restore(BlockState state)
+        {
+            MiniGameSession.Require(MiniGameSession.Range(state.Cells, 200, 0, 7) && MiniGameSession.Range(state.Shape, 4, 0, 15) && state.Shape.Distinct().Count() == 4 && state.Bag != null && state.Bag.Length <= 7 && state.Bag.All(k => k >= 0 && k < 7) && state.Bag.Distinct().Count() == state.Bag.Length && state.Kind >= 0 && state.Kind < 7 && state.NextKind >= 0 && state.NextKind < 7 && state.Score >= 0 && state.Lines >= 0 && state.Lines <= 1000000 && state.X >= -3 && state.X < 10 && state.Y >= -3 && state.Y < 20);
+            int[] rotation = (int[])Shapes[state.Kind].Clone(); bool legal = false; for (int i = 0; i < 4; i++) { legal |= rotation.OrderBy(v => v).SequenceEqual(state.Shape.OrderBy(v => v)); rotation = rotation.Select(p => p % 4 * 4 + 3 - p / 4).ToArray(); } MiniGameSession.Require(legal);
+            BlockBoard board = new BlockBoard(new Random()); Array.Copy(state.Cells, board.Cells, 200); board.shape = (int[])state.Shape.Clone(); board.Kind = state.Kind; board.NextKind = state.NextKind; board.X = state.X; board.Y = state.Y; board.Score = state.Score; board.Lines = state.Lines; board.bag.Clear(); foreach (int kind in state.Bag) board.bag.Enqueue(kind);
+            MiniGameSession.Require(board.Fits(board.shape, board.X, board.Y)); return board;
+        }
     }
     public sealed class BlockGame : MiniGameControl
     {
@@ -101,7 +110,7 @@ namespace NezhaGames
             Grid.SetRow(actions, 3); layout.Children.Add(actions); message = Ui.Text("", 11, Ui.Muted); message.Margin = new Thickness(0, 6, 0, 0); Grid.SetRow(message, 4); layout.Children.Add(message);
             timer = new DispatcherTimer(); timer.Tick += OnTick; PreviewKeyDown += OnKey; NewGame(); return layout;
         }
-        private void NewGame() { timer.Stop(); tier = Math.Max(0, speed.SelectedIndex); baseInterval = new[] { 900, 650, 420, 250 }[tier]; Board = new BlockBoard(new Random()); manualPaused = true; recorded = false; ApplyPause(); }
+        private void NewGame() { NewSession(); timer.Stop(); tier = Math.Max(0, speed.SelectedIndex); baseInterval = new[] { 900, 650, 420, 250 }[tier]; Board = new BlockBoard(new Random()); manualPaused = true; recorded = false; ApplyPause(); }
         private void Toggle() { if (Board.Ended) NewGame(); manualPaused = !manualPaused; ApplyPause(); Focus(); }
         private void OnTick(object sender, EventArgs e) { if (!Paused && !Board.Ended) { Board.Step(); AfterMove(); } }
         private void Act(int action)
@@ -132,6 +141,10 @@ namespace NezhaGames
             message.Text = Board.Ended ? "方块堆到顶了，按 P 再来。" : Paused ? "已暂停 · P 开始 / 继续" : "← → 移动 · ↑ 旋转 · ↓ 加速 · 空格直落 · P 暂停";
         }
         public override void SetHostPaused(bool value) { hostPaused = value; if (timer != null) ApplyPause(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Ended ? null : Board.Capture(tier); }
+        protected override void RestoreSession(string json)
+        { BlockState state = MiniGameSession.Read<BlockState>(json); MiniGameSession.Require(state.Tier >= 0 && state.Tier < 4); BlockBoard restored = BlockBoard.Restore(state); speed.SelectedIndex = state.Tier; NewGame(); Board = restored; ApplyPause(); }
         public override void Dispose() { disposed = true; if (timer != null) { timer.Stop(); timer.Tick -= OnTick; } PreviewKeyDown -= OnKey; }
     }
 }

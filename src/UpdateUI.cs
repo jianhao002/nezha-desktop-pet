@@ -47,7 +47,7 @@ namespace NezhaDesktop
                     });
                 });
                 status.Text = "下载校验通过，正在保存进度并重启…";
-                pet.PrepareForUpdate();
+                pet.SaveMiniGameSession(); pet.PrepareForUpdate();
                 try { client.Launch(prepared, Process.GetCurrentProcess().Id); }
                 catch { pet.CancelPreparedUpdate(); throw; }
                 applying = true; pet.Close();

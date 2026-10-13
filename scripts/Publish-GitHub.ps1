@@ -134,9 +134,15 @@ try {
     }
     $petRelease = Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases/tags/v' + $petVersion) -AllowMissing
     if ($null -eq $petRelease) {
+        $petReleaseNotesPath = Join-Path $petProjectRoot ('docs\RELEASE-v' + $petVersion + '.md')
+        $petReleaseNotes = 'Windows 离线桌宠。完整解压后双击 NezhaPet.exe；个人进度保存在 data。旧极狐版首次迁移请按仓库说明手动安装并保留 data、games、.update。'
+        if (Test-Path -LiteralPath $petReleaseNotesPath -PathType Leaf) {
+            $petReleaseNotes = Get-Content -LiteralPath $petReleaseNotesPath -Raw -Encoding UTF8
+            if ($petReleaseNotes.Length -gt 20000) { throw '发布说明过长，停止发布。' }
+        }
         $petRelease = Invoke-PetGitHubApi -Method POST -Url ($petApiBase + '/releases') -Body @{
             tag_name = 'v' + $petVersion; target_commitish = $petHead; name = '焰轮哪吒 v' + $petVersion
-            body = 'Windows 离线桌宠。完整解压后双击 NezhaPet.exe；个人进度保存在 data。旧极狐版首次迁移请按仓库说明手动安装并保留 data、games、.update。'
+            body = $petReleaseNotes
             draft = $true; prerelease = $false
         }
     }

@@ -145,7 +145,7 @@ namespace NezhaDesktop
             timer.Tick += Tick; timer.Start();
             if (useTray) CreateTray();
             InitializeMiniGames(useTray);
-            Closing += delegate { Shutdown(); };
+            Closing += delegate(object sender, System.ComponentModel.CancelEventArgs e) { if (!e.Cancel) Shutdown(); };
         }
         private void CreateTray()
         {

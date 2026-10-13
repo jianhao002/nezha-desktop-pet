@@ -12,6 +12,7 @@ using NezhaDesktop.MiniGames;
 
 namespace NezhaGames
 {
+    public sealed class SnakeState { public bool Wrap, TurnQueued; public int Speed, Food, Score, DX, DY, NextX, NextY; public int[] Body; }
     public sealed class SnakeBoard
     {
         public readonly int Size;
@@ -55,6 +56,14 @@ namespace NezhaGames
             List<int> available = Enumerable.Range(0, Size * Size).Where(i => !occupied.Contains(i)).ToList();
             if (available.Count == 0) { Won = Ended = true; Food = -1; return; }
             Food = available[random.Next(available.Count)];
+        }
+        public SnakeState Capture(int speed) { return new SnakeState { Wrap = Wrap, Speed = speed, Food = Food, Score = Score, DX = dx, DY = dy, NextX = nextX, NextY = nextY, TurnQueued = turnQueued, Body = Body.ToArray() }; }
+        public void Restore(SnakeState state)
+        {
+            MiniGameSession.Require(state.Body != null && state.Body.Length >= 3 && state.Body.Length < Size * Size && state.Body.All(i => i >= 0 && i < Size * Size) && state.Body.Distinct().Count() == state.Body.Length && state.Food >= 0 && state.Food < Size * Size && !state.Body.Contains(state.Food) && state.Score == (state.Body.Length - 3) * 10);
+            MiniGameSession.Require(Math.Abs(state.DX) + Math.Abs(state.DY) == 1 && Math.Abs(state.NextX) + Math.Abs(state.NextY) == 1 && !(state.NextX == -state.DX && state.NextY == -state.DY));
+            for (int i = 1; i < state.Body.Length; i++) { int x = Math.Abs(state.Body[i] % Size - state.Body[i-1] % Size), y = Math.Abs(state.Body[i] / Size - state.Body[i-1] / Size); if (Wrap) { x = Math.Min(x, Size-x); y = Math.Min(y, Size-y); } MiniGameSession.Require(x+y == 1); }
+            Body.Clear(); Body.AddRange(state.Body); Food = state.Food; Score = state.Score; dx = state.DX; dy = state.DY; nextX = state.NextX; nextY = state.NextY; turnQueued = state.TurnQueued;
         }
     }
     public sealed class SnakeSpeed
@@ -108,6 +117,7 @@ namespace NezhaGames
         private bool Paused { get { return hostPaused || manualPaused; } }
         private void NewGame()
         {
+            NewSession();
             timer.Stop(); Board = new SnakeBoard(14, mode.SelectedIndex == 1, new Random());
             SnakeSpeed chosen = Speeds[Math.Max(0, speed.SelectedIndex)]; speedName = chosen.Name;
             timer.Interval = TimeSpan.FromMilliseconds(chosen.Milliseconds);
@@ -164,6 +174,13 @@ namespace NezhaGames
             if (canvas != null) Paint();
         }
         public override void SetHostPaused(bool paused) { hostPaused = paused; if (timer != null) ApplyPause(); }
+        public override bool CanResume { get { return true; } }
+        protected override object CaptureSession() { return Board.Ended ? null : Board.Capture(Array.FindIndex(Speeds, s => s.Name == speedName)); }
+        protected override void RestoreSession(string json)
+        {
+            SnakeState state = MiniGameSession.Read<SnakeState>(json); MiniGameSession.Require(state.Speed >= 0 && state.Speed < Speeds.Length);
+            SnakeBoard restored = new SnakeBoard(14, state.Wrap, new Random()); restored.Restore(state); mode.SelectedIndex = state.Wrap ? 1 : 0; speed.SelectedIndex = state.Speed; NewGame(); Board = restored; manualPaused = true; ApplyPause();
+        }
         public override void Dispose() { if (timer != null) timer.Stop(); PreviewKeyDown -= OnKey; }
     }
 }
