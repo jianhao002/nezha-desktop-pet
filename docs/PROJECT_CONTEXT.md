@@ -257,3 +257,4 @@
 - 用户明确确认旧桌宠已退出，随后更新固定 `E:\pyprojects\nezha-preview` 并启动。28 个运行文件与已测试构建逐个 SHA256 相同，复制前后 `data`、`games`、`.update` 的 47 个文件哈希完全一致。旧目录完整备份 `E:\pyprojects\nezha-preview-archive\0.7.0-20261013-170911-4d3df5da`，报告 `qa/preview-deployment-20261013-170911-4d3df5da.txt`。启动后的正常存档 / 新内置文件释放由程序处理。
 - 本轮交付为本机试玩和功能分支源码。正式 GitHub Latest 仍为 `v0.7.0`，没有上传 0.8.0 Release 或更改更新通道。家里接续先保存改动，再获取 `codex/gridland-webview`；不要把功能分支误当正式 main，也不要复制 QA 本局覆盖个人进度。实际提交定位见本记录的最近 Git 提交。
 - 尚需用户体验整条长局、不同显示缩放 / 其他电脑；ARM64 未验证。下一步按反馈修复手感和长局续局，再决定合并 / 正式发布；A Dark Room 等第二款网页游戏暂未接入。
+- 功能提交为 `4ca8da2ab201c4d867e5928918578e6cff172a9b`，已推送到个人 GitHub 的 `codex/gridland-webview`。本条只补充提交定位与同步证据，不重建程序或修改已验收候选包。
