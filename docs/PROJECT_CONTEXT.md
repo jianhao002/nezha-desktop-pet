@@ -17,11 +17,11 @@
 | 项目 | 已核对状态 |
 | --- | --- |
 | 源码仓库 | <https://github.com/jianhao002/nezha-desktop-pet>；个人账号 `jianhao002` |
-| 源码分支 | 九款小游戏已合并；本轮 `codex/games-and-resume` 从共同 main 开发四款游戏与续局，实际合并发布见文末 |
+| 源码分支 | `codex/games-and-resume` 已合并到 main，四款游戏与全部内置续局已部署并正式发布；实际证据见文末 |
 | 初次阅读项目时的源码提交 | `1e7e8bb7422102b22fc4b83d3d98adb77163645d` |
 | 当前版本 | `config.json` 为 `0.7.0`，内置十三款小游戏，全内置游戏续局，更新来源 GitHub |
 | 公开更新源 | GitHub Releases：`jianhao002/nezha-desktop-pet`，最新正式发布的 `update.json` |
-| GitHub 当前正式版 | `v0.6.1`，2026-10-10 发布；20,333,024 字节，实际匿名客户端下载校验通过 |
+| GitHub 当前正式版 | `v0.7.0`，2026-10-13 发布；20,355,265 字节，实际匿名客户端下载校验通过 |
 | 极狐历史正式清单 | 2026-10-01 读取为 `0.4.1`，20,282,341 字节；不代表 GitHub 当前版本 |
 | 极狐历史发布包 SHA256 | `a3efdf2655fd1057d0ae0dfc7beca70cd7db5869da4fe4796ba96332ac85268c` |
 | 存档格式 | `SchemaVersion = 3`，兼容迁移格式 1 / 2 |
@@ -67,7 +67,7 @@
 | [src/UpdateUI.cs](../src/UpdateUI.cs) | 检查更新、下载进度、保存进度并启动助手 |
 | [src/UpdateCore.cs](../src/UpdateCore.cs) | 更新源、版本比较、下载、包校验、解压及暂存计划 |
 | [updater/Program.cs](../updater/Program.cs) | 等待原进程退出、备份替换、启动检查、重启及失败恢复 |
-| [src/MiniGameApi.cs](../src/MiniGameApi.cs) | 小游戏生命周期、只读宠物快照、独立原子成绩记录 |
+| [src/MiniGameApi.cs](../src/MiniGameApi.cs) | 小游戏生命周期、只读宠物快照、独立原子成绩 / 本局记录及可选续局能力 |
 | [src/MiniGameCatalog.cs](../src/MiniGameCatalog.cs) | 文件夹发现、清单验证、按需编译、内置文件释放与本机修改保护 |
 | [src/MiniGameWindow.cs](../src/MiniGameWindow.cs) | 游戏列表、小窗模式 / 透明度、失焦暂停与收起 |
 | [src/MiniGameIntegration.cs](../src/MiniGameIntegration.cs) | 右键 / 托盘入口、全局快捷键及退出清理 |
@@ -232,5 +232,15 @@
 - 本局在 `data/mini-games/scores/<id>/session.json`，与最佳成绩分开；五秒自动存、收起 / 切走 / 离开游戏 / 关闭 / 正常退出时也保存。结束标记不复活旧备份；读取失败保留旧文件直到明确新一局，写入失败不关闭当前棋盘。更新启动助手前也先保存本局。
 - 首轮 `qa/games-resume-8f7c079c` 一项失败是测试未展开控件树，不能找到新一局按钮；其他游戏与真实进程恢复检查通过。修正后重建并完整执行 Package/Test：`qa/run-20261013-134123-321e69ec`，89 项小游戏、29 规则、27 动作、3 食物、24 更新、4 真实助手集成及窗口 / 托盘 / 像素穿透全部通过。已检查四款新游戏小窗预览；莲灯线路改为铺满格子的缩放绘制，已纳入重跑。
 - 正式 ZIP 仍沿用既有白名单，不包含本机存档、games、自定义源码或凭证。测试后仅更新说明及发布脚本读取本版本说明，最终 ZIP 仍再次经过实际更新代码验证。
-- 用户已确认退出公司旧试玩版，随后仅更新固定 `E:\pyprojects\nezha-preview`。部署和 GitHub 发布的实际证据将在完成后追加，不能把候选包当成已部署或已发布。
+- 用户已确认退出公司旧试玩版，随后仅更新固定 `E:\pyprojects\nezha-preview`。部署和 GitHub 发布的实际证据见下一条记录。
 - 旧 0.6.1 当时正在玩的棋盘没有本局存档，无法补存；0.7.0 开始的新局才有续局。原养成、最佳成绩、游戏自定义文件保护保留。跨机器显示缩放与用户实机手感仍需试玩。
+
+### 2026-10-13：0.7.0 部署、合并与正式发布已完成
+
+- 功能提交 `d062b26`；合并提交 `6ab339b`。后续发布脚本提交 `432cc59` 增加即时进度、非交互凭证缺失时停止等待，以及禁用 HTTP Expect: 100-continue 协商；这些只影响发布流程，未改变已测试的桌宠程序。前两次发布调用停留过久后中止，随后流程实际通过，不把等待中的调用当作上传成功。
+- 固定试玩目录 `E:\pyprojects\nezha-preview` 已更新并启动为 0.7.0，安装文件逐个 SHA256 与已测试构建一致。复制前后的 `data`、`games`、`.update` 共 29 个原文件校验一致；启动后正常产生的游戏进度与内置文件更新属于程序正常运行。报告 `qa/preview-deployment-20261013-134836-18fe87e8.txt`。
+- 旧运行目录完整备份：`E:\pyprojects\nezha-preview-archive\0.6.1-20261013-134836-18fe87e8`。继续使用桌面的“焰轮哪吒”快捷方式，不再增加日常试玩目录。
+- 发布页 <https://github.com/jianhao002/nezha-desktop-pet/releases/tag/v0.7.0>，正式标签指向 `432cc59`，ZIP 和 update.json 均上传、核对大小与 SHA256 后设为公开 Latest。ZIP 20,355,265 字节，SHA256 `f6681495c894bb10a1419bcab7457e9ad19268b4211f471c88f732b46012609f`。最后实际 ZIP 验证 `qa/release-archive-0.7.0-e9419748/package-check.txt` 为 PASS。
+- 真实客户端匿名检查 / 下载 / 暂存校验报告 `qa/github-online-4c6a7db28c714df290ee1b9ae4da6b18/online-update.txt` 为 PASS，版本、字节数和 SHA256 与正式清单一致。此检查未替换用户运行目录；实际本机部署是上述单独步骤。
+- 源码、功能分支与交接记录同步至个人 GitHub。家庭电脑先保存自己的改动，再获取最新 main；下一项功能另开分支。原小游戏分支和历史保留，renxingshiyan 未操作。
+- 发布后仅补充交接文档，不重新构建或覆盖同版本附件。后续用户试玩反馈再处理显示缩放、交互手感和更多玩法；本轮没有新增成长奖励或服务器功能。
