@@ -353,3 +353,4 @@
 - 同一份已测试程序执行 `Package.ps1 -SkipBuild -SkipTests`，只更新随包 README，不重建已测试二进制；实际 ZIP 校验 `qa/release-archive-0.9.2-b5eccefc` PASS。候选包 `dist/release-0.9.2/nezha-desktop-pet-0.9.2.zip`，41,908,179 字节，SHA256 `4d43e4b79cf98107bf4636f142b3623b040f96aa3bf87533845c2b6294122115`。旧候选包未改写；没有发布 GitHub Release、更新 main 或改正式更新通道。
 - 公司固定试玩 0.9.1 仍在运行，已按 AGENTS.md 请求用户正常退出后再部署。0.9.2 候选包与源码已准备好；实际部署 / 源码推送证据随后补充。之前已扣物资没有足够历史记录可准确判断，不自动改写个人库存补偿。
 - 修复提交 `b004b86ccf8ba1421b33f420ed225021a99ba6d9` 已推送到 `origin/codex/adarkroom-candybox2`，通过 `ls-remote` 核对远端提交一致。候选 ZIP 的 SHA256 再次核对一致。截至本条交接，固定试玩仍是旧进程，部署继续等待用户正常退出；尚未覆盖运行目录。
+- 用户随后明确回复“已退出桌宠”。再次确认固定试玩已无运行进程后，已原位安装并启动 0.9.2：28 个运行文件匹配已测试构建，复制前后 data / games / .update 的 2590 个原文件 SHA256 全部不变；完整旧版备份为 `E:\pyprojects\nezha-preview-archive\0.9.1-20261015-164631-c3436b8e`，部署报告为 `qa/preview-deployment-20261015-164631-c3436b8e.txt`。启动后再次确认固定路径、0.9.2 配置、程序哈希和进程响应。未进入或修改用户的实际探索现场；下一步由用户在原进度中确认“漫漫尘途 → 出发”的游玩效果。本轮仍未发布正式 Release。
