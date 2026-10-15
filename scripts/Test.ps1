@@ -12,6 +12,7 @@ if ([string]::IsNullOrWhiteSpace($ReportDirectory)) { $ReportDirectory = Join-Pa
 $petReportRoot = [IO.Path]::GetFullPath($ReportDirectory)
 if (Test-Path -LiteralPath $petReportRoot) { throw '测试报告目录必须是新目录，防止旧存档干扰结果。' }
 New-Item -ItemType Directory -Path $petReportRoot -Force | Out-Null
+& (Join-Path $PSScriptRoot 'Test-ADarkRoomTranslations.ps1') -ReportFile (Join-Path $petReportRoot 'adarkroom-translations.txt')
 $petChecks = @(
     @{ Name = 'rules'; Argument = '--self-test'; Report = 'test-results.txt' },
     @{ Name = 'preview'; Argument = '--preview'; Report = 'ui-smoke.txt' },

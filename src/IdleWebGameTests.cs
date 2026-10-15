@@ -20,7 +20,7 @@ namespace NezhaDesktop
                 if (game.ReadyForTest && (predicate == null || await game.ExecuteForTest(predicate) == "true")) return;
                 await Task.Delay(50);
             }
-            throw new TimeoutException("网页未就绪：" + predicate + " / " + await game.ExecuteForTest("document.body.innerText.slice(0,1500)"));
+            throw new TimeoutException("网页未就绪：" + predicate + " / " + await game.ExecuteForTest("JSON.stringify({paused:window.NezhaDesktop&&NezhaDesktop.isPaused(),hidden:document.hidden,focus:document.hasFocus(),dialog:!!document.querySelector('#nezhaConfirm[open]')})") + " / " + await game.ExecuteForTest("document.body.innerText.slice(0,1500)"));
         }
         private static async Task Save(WebMiniGameControl game)
         {
@@ -42,6 +42,7 @@ namespace NezhaDesktop
                         var game = (WebMiniGameControl)window.ActiveGame; await Wait(game);
                         Require(await game.ExecuteForTest("document.characterSet==='UTF-8'&&NezhaDesktop.isPaused()&&document.querySelector('#nezhaContinue').textContent.indexOf('继续')>=0") == "true", id + " 未暂停或中文编码错误");
                         results.Add("PASS " + id + "-embedded-offline-chinese-entry-paused");
+                        Require(await game.ExecuteForTest("document.querySelector('#nezhaConfirm') instanceof HTMLDialogElement") == "true", id + " 缺少能适应小窗的重开确认框");
                         string snapshot = id == "adarkroom" ? "JSON.stringify((function(){var s=NezhaDesktop.snapshot().state;return {game:s.game,stores:s.stores,features:s.features,character:s.character,previous:s.previous};})())" : "JSON.stringify(NezhaDesktop.snapshot().state)";
                         string expectedPath = Path.Combine(data, id + ".expected.json");
                         if (resumeData != null) {
@@ -49,6 +50,11 @@ namespace NezhaDesktop
                             results.Add("PASS " + id + "-new-process-restores-native-progress-from-session-file");
                             window.ShowCatalog(); continue;
                         }
+                        game.SetHostPaused(false); await game.ExecuteForTest("NezhaDesktop.resume()"); await Wait(game, "!NezhaDesktop.isPaused()");
+                        await WebDialogChecks.Run(window, game, id, output, results);
+                        // Resizing and closing a modal can hand focus back to the
+                        // desktop. Restore the QA surface before testing live timers.
+                        window.Activate(); await Task.Delay(100);
                         game.SetHostPaused(false); await game.ExecuteForTest("NezhaDesktop.resume()"); await Wait(game, "!NezhaDesktop.isPaused()");
                         if (id == "adarkroom") {
                             Require(await game.ExecuteForTest("document.querySelector('#lightButton').textContent.indexOf('生火')>=0") == "true", "生火按钮未翻译");
@@ -119,9 +125,9 @@ namespace NezhaDesktop
                         Require(await game.ExecuteForTest("document.querySelector('#nezhaContinue').disabled&&document.querySelector('#nezhaPause h2').textContent==='存档暂未载入'") == "true", id + " 错误存档未阻止续局");
                         await Save(game); Require(File.ReadAllText(path) == corrupt, id + " 覆盖了错误存档");
                         results.Add("PASS " + id + "-invalid-native-state-preserved-until-explicit-reset");
-                        await game.ExecuteForTest("window.confirm=function(){return false};NezhaDesktop.newGame()");
+                        await game.ExecuteForTest("NezhaDesktop.newGame();document.querySelector('#nezhaCancelReset').click()");
                         Require(File.ReadAllText(path) == corrupt, id + " 取消重开仍修改存档");
-                        await game.ExecuteForTest("window.confirm=function(){return true};NezhaDesktop.newGame()");
+                        await game.ExecuteForTest("NezhaDesktop.newGame();document.querySelector('#nezhaConfirmReset').click()");
                         await Wait(game, "NezhaDesktop.isPaused()&&window.nezhaInitialSession.state!==3&&document.querySelector('#nezhaPause h2').textContent==='已暂停'");
                         await Save(game); Require(File.ReadAllText(path) != corrupt, id + " 明确重开未生成新存档");
                         results.Add("PASS " + id + "-cancel-reset-keeps-save-confirm-reset-reloads-clean-game");

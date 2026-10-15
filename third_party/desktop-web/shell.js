@@ -2,7 +2,7 @@
 (function () {
     'use strict';
     var adapter, blocked = !!window.nezhaResumeBlocked, manual = true, host = !!window.nezhaHostPaused;
-    var overlay, resume, title, detail, initialized = false;
+    var overlay, resume, title, detail, confirmation, resetButton, previousFocus, confirming = false, initialized = false;
     function post(note) { if (window.chrome && chrome.webview) chrome.webview.postMessage(note); }
     window.addEventListener('error', function (event) { if (event.message) post({ kind: 'error', message: event.message + ' / ' + event.filename + ':' + event.lineno }); });
     function check(value, depth) {
@@ -20,9 +20,9 @@
     }
     function refresh() {
         if (!initialized) return;
-        var pause = blocked || manual || host;
+        var pause = blocked || manual || host || confirming;
         NezhaClock.setPaused(pause); adapter.pause(pause);
-        document.body.classList.toggle('nezhaPaused', pause); overlay.hidden = !pause;
+        document.body.classList.toggle('nezhaPaused', pause); overlay.hidden = !pause || confirming;
         title.textContent = blocked ? '存档暂未载入' : '已暂停';
         detail.textContent = blocked ? '旧存档已保留。可以返回游戏列表，或确认重新开始。' : adapter.resumeHelp;
         resume.disabled = blocked || host;
@@ -30,6 +30,10 @@
     }
     function reload(record) {
         validate(record); manual = true; refresh(); post({ kind: 'reload', json: JSON.stringify(record) });
+    }
+    function cancelReset() {
+        confirmation.close(); confirming = false; refresh();
+        if (previousFocus && previousFocus.isConnected) previousFocus.focus();
     }
     window.NezhaDesktop = {
         configure: function (game) {
@@ -51,6 +55,21 @@
                     document.body.append(overlay); title = overlay.querySelector('h2'); detail = overlay.querySelector('p'); resume = overlay.querySelector('#nezhaContinue');
                     resume.onclick = window.NezhaDesktop.resume;
                     overlay.querySelector('#nezhaReset').onclick = window.NezhaDesktop.newGame;
+                    // A page dialog fits the actual embedded viewport; Chromium's
+                    // default confirm UI has a minimum width larger than a small pet window.
+                    confirmation = document.createElement('dialog'); confirmation.id = 'nezhaConfirm';
+                    confirmation.setAttribute('aria-labelledby', 'nezhaConfirmTitle');
+                    confirmation.innerHTML = '<h2 id="nezhaConfirmTitle">重新开始游戏？</h2><p>当前游戏的进度会被替换，其他游戏不受影响。</p><div><button id="nezhaCancelReset" autofocus>取消</button><button id="nezhaConfirmReset">确定重新开始</button></div>';
+                    document.body.append(confirmation);
+                    confirmation.querySelector('#nezhaCancelReset').onclick = cancelReset;
+                    confirmation.addEventListener('cancel', function (event) { event.preventDefault(); cancelReset(); });
+                    resetButton = confirmation.querySelector('#nezhaConfirmReset');
+                    resetButton.onclick = function () {
+                        if (resetButton.disabled) return;
+                        var record = { version: 1, game: adapter.id, state: adapter.empty() };
+                        validate(record); resetButton.disabled = true;
+                        manual = true; confirmation.close(); confirming = false; reload(record);
+                    };
                     initialized = true; refresh(); post({ kind: 'ready' });
                 } catch (e) { post({ kind: 'error', message: e.message }); }
             });
@@ -59,8 +78,9 @@
         blockResume: function (message) { blocked = true; post({ kind: 'resume-error', message: message }); refresh(); },
         resume: function () { if (!blocked && !host) { manual = false; refresh(); } },
         newGame: function () {
-            if (!confirm('确定重新开始？此游戏当前进度会被替换，其他游戏不受影响。')) return;
-            reload({ version: 1, game: adapter.id, state: adapter.empty() });
+            if (!initialized || confirming) return;
+            previousFocus = document.activeElement; resetButton.disabled = false;
+            confirming = true; refresh(); confirmation.showModal();
         },
         reloadFromNative: function () { reload({ version: 1, game: adapter.id, state: adapter.readNative() }); },
         save: function (id) {

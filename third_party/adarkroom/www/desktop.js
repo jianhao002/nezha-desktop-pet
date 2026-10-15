@@ -23,6 +23,9 @@
     AudioEngine.isAudioContextRunning = function () { return true; };
     Engine.toggleVolume = function () {};
     Engine.resumeAudioContext = function () {};
+    // A cross-promotion opens another website, which this offline host blocks.
+    // Leave the ordinary story / combat pools intact.
+    Events.Marketing = [];
     // Native import / restart reloads go through the host's atomic save first.
     // The source changes to engine.js call reloadFromNative at those two sites.
     NezhaDesktop.configure({
@@ -37,6 +40,20 @@
             localStorage.lang = 'zh_cn';
         },
         start: function () {
+            var shade = document.createElement('div'); shade.id = 'nezhaEventShade'; shade.hidden = true; document.body.append(shade);
+            function syncEvents() {
+                var active = Events.activeEvent();
+                document.querySelectorAll('.eventPanel').forEach(function (panel) {
+                    if (panel.parentNode !== document.body) document.body.append(panel);
+                    panel.hidden = !!active && panel !== active.eventPanel[0];
+                    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-modal', 'true');
+                    var heading = panel.querySelector('.eventTitle');
+                    if (heading) { heading.id = 'nezhaEventTitle'; panel.setAttribute('aria-labelledby', heading.id); }
+                });
+                shade.hidden = !document.querySelector('.eventPanel:not([hidden])');
+            }
+            new MutationObserver(syncEvents).observe(document.body, { childList: true, subtree: true });
+            syncEvents();
             var stores = document.createElement('div'); stores.id = 'nezhaStores'; document.querySelector('#wrapper').append(stores);
             var messages = document.createElement('h3'); messages.textContent = '消息'; document.querySelector('#wrapper').append(messages);
             document.querySelector('#wrapper').append(document.querySelector('#notifications'));

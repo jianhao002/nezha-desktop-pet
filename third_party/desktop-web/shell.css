@@ -14,3 +14,10 @@
 #nezhaPause h2 { font-size: 18px; margin-top: 0; }
 body.nezhaPaused #nezhaStage { pointer-events: none; }
 body.nezhaPaused #nezhaStage * { animation-play-state: paused !important; }
+#nezhaConfirm { font: 14px/1.7 "Microsoft YaHei", sans-serif; color: #334155; background: white; border: 1px solid #94a3b8; border-radius: 12px; padding: 18px; width: 320px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); box-sizing: border-box; overflow: auto; overflow-wrap: anywhere; box-shadow: 0 8px 30px #0f172a30; }
+#nezhaConfirm::backdrop { background: #0f172a50; }
+#nezhaConfirm h2 { margin: 0 0 10px; font-size: 18px; }
+#nezhaConfirm p { margin: 0 0 16px; }
+#nezhaConfirm > div { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+#nezhaConfirm button { font: inherit; border: 1px solid #94a3b8; background: white; color: #334155; border-radius: 5px; padding: 5px 10px; cursor: pointer; max-width: 100%; }
+#nezhaConfirmReset { background: #fff7ed !important; border-color: #c2410c !important; color: #9a3412 !important; }

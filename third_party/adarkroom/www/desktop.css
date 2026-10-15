@@ -17,9 +17,14 @@ div#workers { width: 180px; margin-left: 14px; }
 div#notifications { position: relative; top: 0; left: 0; width: 100%; height: 180px; font-size: 13px; }
 div#notifyGradient { pointer-events: none; }
 #wrapper > h3 { font-size: 13px; color: #64748b; margin: 20px 0 8px; font-weight: normal; }
-.eventPanel { position: fixed; left: 12px; top: 60px; width: calc(100vw - 56px); max-height: calc(100vh - 110px); padding: 14px; overflow: auto; box-sizing: content-box; }
-.eventPanel:before { position: fixed; inset: 0; width: 100vw; height: 100vh; }
-.eventPanel .button { float: none; }
+#nezhaEventShade { position: fixed; inset: 0; z-index: 1400; background: #0f172a45; }
+#nezhaEventShade[hidden] { display: none; }
+.eventPanel { position: fixed; left: 12px; right: 12px; top: 12px; width: auto !important; max-width: 440px; max-height: calc(100vh - 24px); padding: 16px; margin: 0 auto; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; z-index: 1500; border: 1px solid #94a3b8; border-radius: 8px; box-shadow: 0 8px 25px #0f172a30; overflow-wrap: anywhere; }
+.eventPanel:before, .eventPanel:after, .eventPanel .eventTitle:after { display: none; }
+.eventPanel .eventTitle { position: static; display: block; margin: 0 0 16px; padding: 0; line-height: 1.5; font-weight: bold; }
+.eventPanel .button { float: none; box-sizing: border-box; max-width: 100%; }
+.eventPanel #buttons .button { margin: 0 0 8px; }
+.eventPanel textarea, .eventPanel input { max-width: 100%; box-sizing: border-box; }
 div#saveNotify { top: auto; bottom: 8px; right: 8px; z-index: 500; font-size: 12px; }
 #worldPanel { overflow: auto; max-height: 70vh; }
 #map { font-size: 11px; }
