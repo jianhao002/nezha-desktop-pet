@@ -19,7 +19,8 @@ $petChecks = @(
     @{ Name = 'food'; Argument = '--food-preview'; Report = 'food-playback.txt' },
     @{ Name = 'actions'; Argument = '--actions-preview'; Report = 'actions-playback.txt' },
     @{ Name = 'update'; Argument = '--update-test'; Report = 'update-test-results.txt' },
-    @{ Name = 'mini-games'; Argument = '--minigame-test'; Report = 'mini-game-results.txt' }
+    @{ Name = 'mini-games'; Argument = '--minigame-test'; Report = 'mini-game-results.txt' },
+    @{ Name = 'web-game'; Argument = '--webgame-test'; Report = 'web-game-results.txt' }
 )
 foreach ($petCheck in $petChecks) {
     $petOutput = Join-Path $petReportRoot $petCheck.Name
@@ -41,5 +42,14 @@ foreach ($petCheck in $petChecks) {
     if ($petText -match '(?m)^FAIL\b|result=FAIL') { throw ('报告中存在失败项：' + $petReport) }
     Write-Output ('PASS ' + $petCheck.Name + ' → ' + $petReport)
 }
+$petWebRestart = Join-Path $petReportRoot 'web-game-restart'
+$petWebSavedData = Join-Path $petReportRoot 'web-game\data'
+if ($petWebRestart.Contains('"') -or $petWebSavedData.Contains('"')) { throw '网页验证路径不能包含引号。' }
+$petWebProcess = Start-Process -FilePath $petExecutable -ArgumentList ('--webgame-resume "' + $petWebRestart + '" "' + $petWebSavedData + '"') -WorkingDirectory $petRuntime -WindowStyle Hidden -PassThru
+if (-not $petWebProcess.WaitForExit(60000)) { $petWebProcess.Kill(); throw '网页游戏跨进程恢复超时。' }
+$petWebProcess.Refresh()
+$petWebReport = Join-Path $petWebRestart 'web-game-results.txt'
+if ($petWebProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $petWebReport) -or (Get-Content -LiteralPath $petWebReport -Raw) -match '(?m)^FAIL\b') { throw ('网页游戏跨进程恢复失败：' + $petWebRestart) }
+Write-Output ('PASS web-game-restart → ' + $petWebReport)
 & (Join-Path $PSScriptRoot 'Test-UpdateIntegration.ps1') -RuntimeDirectory $petRuntime -ReportDirectory (Join-Path $petReportRoot 'update-integration')
 Write-Output ('全部测试通过。报告：' + $petReportRoot)

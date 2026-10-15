@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "gridland",
+  "name": "格子王国 · Gridland",
+  "description": "三消收集资源，白天建造村庄，夜间抵御怪物。离线游戏，收起暂停并保留本局。",
+  "author": "doublespeak games；哪吒桌宠接入",
+  "entryType": "NezhaGames.GridlandGame",
+  "sources": ["Game.cs"]
+}

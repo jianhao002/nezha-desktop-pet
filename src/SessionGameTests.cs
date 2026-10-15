@@ -68,8 +68,8 @@ namespace NezhaDesktop
         public static int Fixture(string folder,string phase)
         {
             if(phase!="write" && phase!="read")throw new ArgumentException("unknown fixture phase");if(phase=="write" && Directory.Exists(folder))throw new IOException("fixture already exists");Directory.CreateDirectory(folder);
-            string root=Path.Combine(folder,"runtime"),data=Path.Combine(folder,"data");Directory.CreateDirectory(root);MiniGameCatalog catalog=new MiniGameCatalog(root,data);List<MiniGameEntry> entries=catalog.Scan();Check(entries.Count==13,"fixture missing games");
-            foreach(MiniGameEntry entry in entries){List<string> notices=new List<string>();using(IMiniGame game=catalog.Create(entry,null,notices.Add)){string expected=Path.Combine(folder,entry.Manifest.Id+".expected.json");if(phase=="write"){Mutate(entry.Manifest.Id,game);File.WriteAllText(expected,Snapshot(game));((IMiniGameSession)game).SaveSession();}else{Check(notices.Any(t=>t.StartsWith("已继续")),entry.Manifest.Id+": "+String.Join(";",notices));Check(Snapshot(game)==File.ReadAllText(expected),"process restart changed "+entry.Manifest.Id);}}}
+            string root=Path.Combine(folder,"runtime"),data=Path.Combine(folder,"data");Directory.CreateDirectory(root);MiniGameCatalog catalog=new MiniGameCatalog(root,data);List<MiniGameEntry> entries=catalog.Scan().Where(e=>e.Manifest.Id!="gridland").ToList();Check(entries.Count==13,"fixture missing C# games");
+            foreach(MiniGameEntry entry in entries.Where(e=>e.Manifest.Id!="gridland")){List<string> notices=new List<string>();using(IMiniGame game=catalog.Create(entry,null,notices.Add)){string expected=Path.Combine(folder,entry.Manifest.Id+".expected.json");if(phase=="write"){Mutate(entry.Manifest.Id,game);File.WriteAllText(expected,Snapshot(game));((IMiniGameSession)game).SaveSession();}else{Check(notices.Any(t=>t.StartsWith("已继续")),entry.Manifest.Id+": "+String.Join(";",notices));Check(Snapshot(game)==File.ReadAllText(expected),"process restart changed "+entry.Manifest.Id);}}}
             File.WriteAllText(Path.Combine(folder,phase+".txt"),"PASS 13 games "+phase);return 0;
         }
     }

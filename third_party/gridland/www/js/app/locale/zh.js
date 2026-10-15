@@ -1,0 +1,9 @@
+define({
+    DAY:'第',PLAY:'开始',CLEAR:'清除！',CONTINUE:'继续',NEWGAMEPLUS:'新旅程+',LEVEL:'等级',
+    DEATHS:'倒下次数',NIGHTS:'度过的夜晚',ROW:'连续守护夜数',SWAPPED:'交换格子',CHAIN:'最长连锁',
+    GATHERED:'收集资源',KILLED:'击败怪物',ATONCE:'同时出现的怪物',LOOT:'获得战利品',CAST:'施放法术',
+    DRAGONS:'击败巨龙',CASUALNIGHTS:'休闲夜晚',DIFFICULTY:'难度',SHARE:'分享',DONATE:'原作者',
+    NEWGAME:'新游戏',CONFIRM:'确认',CANCEL:'取消',IMPORT:'导入成长',EXPORT:'导出成长',DELETE:'重开',
+    ARE_YOU_SURE:'确定重新开始？',EXPORT_CODE:'成长记录代码：',IMPORT_CODE:'成长记录代码：',
+    LONG_LOAD:'正在准备游戏资源。',NO_MUSIC:'静音开始'
+});

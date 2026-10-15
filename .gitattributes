@@ -7,3 +7,6 @@
 *.webp binary
 *.ico binary
 *.gif binary
+# Retain upstream formatting and ignore upstream whitespace in diff checks.
+third_party/gridland/** -text -whitespace
+third_party/webview2/*.txt -text -whitespace

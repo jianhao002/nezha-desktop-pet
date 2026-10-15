@@ -57,6 +57,7 @@ namespace NezhaDesktop.MiniGames
         private readonly string directory;
         private Dictionary<string, int> records;
         public string GameDirectory { get; private set; }
+        public string StorageDirectory { get { return directory; } }
         public PetSnapshot Pet { get { return snapshot == null ? null : snapshot(); } }
         public MiniGameContext(string gameDirectory, string dataDirectory, Func<PetSnapshot> snapshot, Action<string> notice)
         {
