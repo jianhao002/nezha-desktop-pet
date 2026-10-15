@@ -2,7 +2,7 @@
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
 
-0.8.2 试玩版为格子王国补充死亡提示：倒下后暂停，点击“继续”才从已保存的白天重试；关闭再打开仍显示该提示。保留原有成长 / 重试规则，以及 0.8.1 的中文乱码修复。
+0.8.2 为格子王国补充死亡提示：倒下后暂停，点击“继续”才从已保存的白天重试；关闭再打开仍显示该提示。保留原有成长 / 重试规则，以及 0.8.1 的中文乱码修复。版本内容见 [0.8.2 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.8.2.md)。
 
 新增 **格子王国 · Gridland**：在原小游戏窗口中离线玩三消、建设和夜间战斗。第一次打开需要本机有 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)，本机已有时直接使用；缺少时会提示，其余十三款小游戏仍可使用。
 
