@@ -58,6 +58,35 @@ function Get-PetCachedGitHubCredential {
     finally { $petCredentialText = $null; $petProcess.Dispose() }
 }
 
+function Send-PetGitHubFile([Uri]$Uri, [string]$File) {
+    if ($File.Contains('"') -or $Uri.AbsoluteUri.Contains('"')) { throw '上传路径不能含双引号。' }
+    $petCurlStart = New-Object Diagnostics.ProcessStartInfo
+    $petCurlStart.FileName = (Get-Command curl.exe -ErrorAction Stop).Source
+    $petCurlStart.Arguments = '--http1.1 --silent --show-error --fail --connect-timeout 20 --max-time 180 --request POST --header @- --data-binary "@' + $File + '" "' + $Uri.AbsoluteUri + '"'
+    $petCurlStart.UseShellExecute = $false
+    $petCurlStart.CreateNoWindow = $true
+    $petCurlStart.RedirectStandardInput = $true
+    $petCurlStart.RedirectStandardOutput = $true
+    $petCurlStart.RedirectStandardError = $true
+    $petCurlProcess = New-Object Diagnostics.Process
+    $petCurlProcess.StartInfo = $petCurlStart
+    $petCurlText = $null
+    try {
+        if (-not $petCurlProcess.Start()) { throw '无法启动附件上传。' }
+        $petCurlOutput = $petCurlProcess.StandardOutput.ReadToEndAsync()
+        $petCurlError = $petCurlProcess.StandardError.ReadToEndAsync()
+        # Send credentials through stdin only. Never put headers in arguments or files.
+        $petCurlProcess.StandardInput.Write("Authorization: Bearer " + $petToken + "`nUser-Agent: NezhaDesktopPet-Release`nAccept: application/vnd.github+json`nX-GitHub-Api-Version: 2022-11-28`nContent-Type: application/octet-stream`nExpect:`n")
+        $petCurlProcess.StandardInput.Close()
+        if (-not $petCurlProcess.WaitForExit(195000)) { $petCurlProcess.Kill(); throw '附件上传超时；草稿保留。' }
+        $petCurlText = $petCurlOutput.Result
+        $null = $petCurlError.Result
+        if ($petCurlProcess.ExitCode -ne 0) { throw ('附件上传失败，curl 退出码 ' + $petCurlProcess.ExitCode + '；草稿和本地包保留。') }
+        return ($petCurlText | ConvertFrom-Json)
+    }
+    finally { $petCurlText = $null; $petCurlProcess.Dispose() }
+}
+
 function Invoke-PetGitHubApi([string]$Method, [string]$Url, [object]$Body, [string]$File, [switch]$AllowMissing) {
     $petUri = [Uri]$Url
     if ($petUri.Scheme -ne 'https' -or -not $petUri.IsDefaultPort -or $petUri.UserInfo -or $petUri.Fragment -or
@@ -66,6 +95,10 @@ function Invoke-PetGitHubApi([string]$Method, [string]$Url, [object]$Body, [stri
     $petResponse = $null; $petStream = $null; $petReader = $null; $petInput = $null
     Write-Host ('GitHub release: ' + $Method + ' ' + $petUri.AbsolutePath)
     try {
+        if ($File) {
+            if ($Method -ne 'POST' -or $petUri.Host -ne 'uploads.github.com') { throw '附件只能上传到已校验的 GitHub 地址。' }
+            return (Send-PetGitHubFile -Uri $petUri -File $File)
+        }
         $petRequest = [Net.HttpWebRequest]::Create($petUri)
         $petRequest.Method = $Method
         $petRequest.AllowAutoRedirect = $false
@@ -76,15 +109,7 @@ function Invoke-PetGitHubApi([string]$Method, [string]$Url, [object]$Body, [stri
         $petRequest.Accept = 'application/vnd.github+json'
         $petRequest.Headers['X-GitHub-Api-Version'] = '2022-11-28'
         $petRequest.Headers['Authorization'] = 'Bearer ' + $petToken
-        if ($File) {
-            $petRequest.ContentType = 'application/octet-stream'
-            $petRequest.ContentLength = (Get-Item -LiteralPath $File).Length
-            $petInput = [IO.File]::OpenRead($File)
-            $petStream = $petRequest.GetRequestStream()
-            $petInput.CopyTo($petStream)
-            $petStream.Dispose(); $petStream = $null
-        }
-        elseif ($null -ne $Body) {
+        if ($null -ne $Body) {
             $petBytes = [Text.Encoding]::UTF8.GetBytes(($Body | ConvertTo-Json -Depth 10 -Compress))
             $petRequest.ContentType = 'application/json; charset=utf-8'
             $petRequest.ContentLength = $petBytes.Length
@@ -140,6 +165,12 @@ try {
     }
     $petRelease = Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases/tags/v' + $petVersion) -AllowMissing
     if ($null -eq $petRelease) {
+        # A draft may not have created its Git tag yet, so lookup by tag can return 404.
+        $petDrafts = @(Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases?per_page=100') | Where-Object { $_.draft -and $_.tag_name -eq ('v' + $petVersion) })
+        if ($petDrafts.Count -gt 1) { throw '同版本存在多个发布草稿，请先核对失败草稿，停止重复创建。' }
+        if ($petDrafts.Count -eq 1) { $petRelease = $petDrafts[0] }
+    }
+    if ($null -eq $petRelease) {
         $petReleaseNotesPath = Join-Path $petProjectRoot ('docs\RELEASE-v' + $petVersion + '.md')
         $petReleaseNotes = 'Windows 离线桌宠。完整解压后双击 NezhaPet.exe；个人进度保存在 data。旧极狐版首次迁移请按仓库说明手动安装并保留 data、games、.update。'
         if (Test-Path -LiteralPath $petReleaseNotesPath -PathType Leaf) {
@@ -151,6 +182,9 @@ try {
             body = $petReleaseNotes
             draft = $true; prerelease = $false
         }
+    }
+    if ($petRelease.draft -and $petRelease.target_commitish -ne $petHead) {
+        $petRelease = Invoke-PetGitHubApi -Method PATCH -Url ($petApiBase + '/releases/' + $petRelease.id) -Body @{ target_commitish = $petHead }
     }
     foreach ($petUpload in @(@{ Name = $petZipName; Path = $petZipPath }, @{ Name = 'update.json'; Path = $petManifestPath })) {
         $petLocalHash = (Get-FileHash -LiteralPath $petUpload.Path -Algorithm SHA256).Hash.ToLowerInvariant()

@@ -20,6 +20,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Publish-Release.ps
 
 若本轮已经构建并通过测试，可使用 `-SkipBuild` 复用程序；默认仍执行完整测试。同版本附件不覆盖，内容变化必须提升版本。网络中断后保留 `dist/release-版本`，可以直接运行 `scripts/Publish.ps1` 复用候选包；它不会重新打包。
 
+附件上传使用 Windows 的 `curl.exe`，令牌仅经子进程标准输入传递，不放入命令行或文件。仍限制为同一个 GitHub 仓库的官方 HTTPS 上传地址、不跟随上传重定向，并核对服务器返回的大小与 SHA256。重试时会查找该版本已有草稿，避免因为草稿尚未创建 Git 标签而重复新建；多个同版本草稿会停止，先核对失败记录再处理。
+
 ## 发布与更新地址
 
 - 发布标签：`v0.6.1` 等固定版本。
