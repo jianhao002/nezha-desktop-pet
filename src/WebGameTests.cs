@@ -42,7 +42,7 @@ namespace NezhaDesktop
             Directory.CreateDirectory(root);
             // Keep the QA surface visible: an occluded browser may stop animation
             // frames or leave CapturePreviewAsync pending while timers still run.
-            MiniGameWindow window = new MiniGameWindow(root, data, null, false) { ShowActivated = false, ShowInTaskbar = false, Topmost = true };
+            MiniGameWindow window = new MiniGameWindow(root, data, null, false) { ShowActivated = true, ShowInTaskbar = false, Topmost = true };
             window.Loaded += async delegate {
                 try {
                     MiniGameCatalog catalog = new MiniGameCatalog(root, data);

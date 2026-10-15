@@ -1,14 +1,20 @@
-# 焰轮哪吒 · Windows 离线桌宠 0.8.2
+# 焰轮哪吒 · Windows 离线桌宠 0.9.0
 
 这是独立的 Windows 桌面程序。日常玩耍无需打开 Codex、登录 GPT 或联网；检查和下载更新时需要联网。
 
-0.8.2 为格子王国补充死亡提示：倒下后暂停，点击“继续”才从已保存的白天重试；关闭再打开仍显示该提示。保留原有成长 / 重试规则，以及 0.8.1 的中文乱码修复。版本内容见 [0.8.2 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.8.2.md)。
+0.9.0 本地试玩版新增 **小黑屋 · A Dark Room** 和 **糖果盒子 2 · Candy Box 2**，共十六款游戏。两款均离线运行、默认中文 / 中文提示、自动保存原作进度；重新打开后点“继续游戏”。本版尚未上传正式更新通道，更新按钮只获取已正式发布的版本。
 
-新增 **格子王国 · Gridland**：在原小游戏窗口中离线玩三消、建设和夜间战斗。第一次打开需要本机有 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)，本机已有时直接使用；缺少时会提示，其余十三款小游戏仍可使用。
+小黑屋从生火开始逐渐解锁收集、建设和探索，小窗采用纵向排版。Candy Box 2 从积攒糖果逐步解锁地图与装备，保留字符画和中英文提示，宽地图可左右滚动。Candy Box 2 重开回到糖果页面，当前战斗不逐帧续接；小黑屋也沿用原作的事件 / 探索加载规则。收起 / 失焦时暂停，取消窗口的“失焦暂停”可以在打开期间挂机，退出程序后不补算产量。
+
+0.8.2 的格子王国死亡提示、显式继续重试及中文修复全部保留。历史内容见 [0.8.2 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.8.2.md)。
+
+三款网页游戏都在原小游戏窗口运行。第一次打开需要本机有 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)，本机已有时直接使用；缺少时会提示，其余十三款小游戏仍可使用。
 
 格子王国会保存棋盘、成长、昼夜进度、怪物血量和位置，重新打开后点击“继续游戏”。短暂的攻击、搬运和建设动画会重新计算，正在搬运的资源回到保存的仓库；临时飞行投射物不保存。原游戏的“导出成长”只含成长数据，完整迁移仍复制整个 `data` 目录。
 
 Gridland 原作者为 doublespeak games / Michael Townsend，原源码与修改后的源码保留 MPL-2.0 许可，位于仓库 `third_party/gridland`。WebView2 SDK 的 LICENSE / NOTICE 与 Gridland 原许可随程序嵌入，首次打开游戏后释放在 `data/mini-games/web-assets/gridland/<资源版本>` 内；对应源码和第三方声明随个人公开仓库提供。
+
+小黑屋同样来自 doublespeak games，采用 MPL-2.0；Candy Box 2 原作者为 David “aniwey” L.，采用 GPL-3.0-or-later。两款完整上游代码、许可与适配说明位于 `third_party/adarkroom` / `third_party/candybox2`，一起嵌入程序并在首次打开后释放到对应 `web-assets/<游戏 ID>/<资源版本>`。公共桌面网页脚本采用 MIT 许可。详情见各目录 `NOTICE.md`。
 
 个人公开仓库：[jianhao002/nezha-desktop-pet](https://github.com/jianhao002/nezha-desktop-pet)。开发、发布操作见 [开发指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/DEVELOPMENT.md) 和 [发布指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE.md)。
 
@@ -16,7 +22,7 @@ Gridland 原作者为 doublespeak games / Michael Townsend，原源码与修改�
 
 0.4.0 增加部位专属回应、神环与风火轮特效、午睡恢复体力，以及不打断吃东西的动作顺序。版本内容见 [0.4.0 说明](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/RELEASE-v0.4.0.md)，后续安排见 [功能路线](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/ROADMAP.md)。
 
-0.8.0 提供十四款独立小窗游戏：原有十三款游戏加格子王国。支持多档难度、窗口模式、透明度、切走暂停与一键收起，内置游戏支持关闭后继续上一局。现有 C# 游戏可通过独立文件夹接入，网页游戏需要适配容器接口，见 [小游戏使用与扩展](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/MINI_GAMES.md)。现有动作与养成规则沿用 0.4.1。
+十六款独立小窗游戏支持窗口模式、透明度、切走暂停与一键收起；续玩边界见上文，各游戏独立存档。C# 游戏可通过独立文件夹接入，网页游戏需适配容器接口，见 [小游戏使用与扩展](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/MINI_GAMES.md)。现有动作与养成规则沿用 0.4.1。
 
 0.6.1 将源码与正式更新来源迁至个人 GitHub 仓库。旧极狐 GitLab 版首次迁移需要手动安装完整新版并保留存档，之后使用更新按钮下载 GitHub 正式发布包。跨电脑开发和安装步骤见 [GitHub 迁移指南](https://github.com/jianhao002/nezha-desktop-pet/blob/main/docs/GITHUB_MIGRATION.md)。
 
@@ -59,7 +65,7 @@ SHA256 相当于包的“指纹”，用于检查下载包是否与发布者的�
 6. 关闭养成面板不会退出桌宠；从右键菜单或右下角托盘选择“退出”。隐藏后可从托盘恢复。
 7. 在“成长”查看本级经验、下一级解锁内容和成长礼。
 8. 在“小屋”的“午睡补元气”卡片让哪吒睡一会儿；也可从右键或托盘菜单睡觉、叫醒。
-9. 右键哪吒或托盘 → 小游戏，选择十四款游戏。`Ctrl+Alt+H` 收起 / 恢复；快捷键占用时可从原入口恢复，也可以点击“收起”。原 C# 游戏支持 `Esc` 收起；格子王国使用窗口按钮或全局快捷键。关闭后再次打开同一游戏，继续未结束的一局。
+9. 右键哪吒或托盘 → 小游戏，选择十六款游戏。`Ctrl+Alt+H` 收起 / 恢复；快捷键占用时可从原入口恢复，也可以点击“收起”。原 C# 游戏支持 `Esc` 收起；网页游戏使用窗口按钮或全局快捷键。重新打开后继续已保存的进度。
 
 初始提供 50 金币、2 份桂花糖。金币是本地游戏数值，不涉及真实支付。
 

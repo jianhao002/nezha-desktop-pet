@@ -39,7 +39,7 @@ function Invoke-PetCompiler([string]$Name, [string[]]$Sources) {
             $petCompileArgs += ('/resource:' + $petWebDll + ',Nezha.WebSDK.' + $petWebName + '.dll')
         }
         foreach ($petArch in @('x64', 'x86')) { $petCompileArgs += ('/resource:' + (Join-Path $petWeb.Sdk ('runtimes\win-' + $petArch + '\native\WebView2Loader.dll')) + ',Nezha.WebSDK.' + $petArch + '.dll') }
-        $petCompileArgs += ('/resource:' + $petWeb.Assets + ',Nezha.WebGames.gridland.zip')
+        foreach ($petGameId in @('gridland', 'adarkroom', 'candybox2')) { $petCompileArgs += ('/resource:' + $petWeb.Assets[$petGameId] + ',Nezha.WebGames.' + $petGameId + '.zip') }
         foreach ($petGameFolder in (Get-ChildItem -LiteralPath (Join-Path $petProjectRoot 'games') -Directory | Sort-Object Name)) {
             foreach ($petGameFile in (Get-ChildItem -LiteralPath $petGameFolder.FullName -File | Where-Object { $_.Name -eq 'game.json' -or $_.Extension -eq '.cs' } | Sort-Object Name)) {
                 $petCompileArgs += ('/resource:' + $petGameFile.FullName + ',Nezha.MiniGames.' + $petGameFolder.Name + '.' + $petGameFile.Name)

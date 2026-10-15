@@ -1,0 +1,25 @@
+@charset "UTF-8";
+/* Desktop changes, 2026-10-15. MPL-2.0. */
+body, .tooltip { font-family: "Microsoft YaHei", sans-serif; font-size: 14px; }
+body, html { height: auto; overflow-x: hidden; }
+div#wrapper { width: auto; padding: 12px; margin: 0; box-sizing: border-box; }
+div#content { height: auto; overflow: visible; }
+div#outerSlider, div#outerSlider > div, div#locationSlider { position: static; width: 100% !important; height: auto; float: none; overflow: visible; left: 0 !important; }
+div#header { display: flex; flex-wrap: wrap; gap: 8px; height: auto; padding-bottom: 18px; }
+div.headerButton { float: none; font-size: 14px; margin: 0; }
+div.location { display: none; width: 100%; float: none; min-height: 80px; }
+div.location.nezhaActive { display: block; }
+div#buildBtns, div#craftBtns, div#buyBtns, div#village, div#workers, div#perks { position: relative; left: auto; right: auto; top: auto; margin: 18px 0; }
+div#buildBtns, div#craftBtns, div#buyBtns { display: inline-block; vertical-align: top; margin-right: 12px; }
+div#storesContainer { position: relative; top: auto !important; right: auto !important; margin: 24px 0; }
+div#stores, div#weapons, div#village, div#perks, #outfitting { width: auto; max-width: 300px; box-sizing: border-box; }
+div#workers { width: 180px; margin-left: 14px; }
+div#notifications { position: relative; top: 0; left: 0; width: 100%; height: 180px; font-size: 13px; }
+div#notifyGradient { pointer-events: none; }
+#wrapper > h3 { font-size: 13px; color: #64748b; margin: 20px 0 8px; font-weight: normal; }
+.eventPanel { position: fixed; left: 12px; top: 60px; width: calc(100vw - 56px); max-height: calc(100vh - 110px); padding: 14px; overflow: auto; box-sizing: content-box; }
+.eventPanel:before { position: fixed; inset: 0; width: 100vw; height: 100vh; }
+.eventPanel .button { float: none; }
+div#saveNotify { top: auto; bottom: 8px; right: 8px; z-index: 500; font-size: 12px; }
+#worldPanel { overflow: auto; max-height: 70vh; }
+#map { font-size: 11px; }

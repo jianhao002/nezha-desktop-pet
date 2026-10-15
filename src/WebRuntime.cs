@@ -53,10 +53,12 @@ namespace NezhaDesktop
             try { File.WriteAllBytes(temporary, bytes); if (File.Exists(file)) File.Replace(temporary, file, null); else File.Move(temporary, file); }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }
-        internal static string Assets(string data)
+        internal static bool IsGame(string id) { return id == "gridland" || id == "adarkroom" || id == "candybox2"; }
+        internal static string Assets(string data, string id = "gridland")
         {
-            byte[] bytes = Read("Nezha.WebGames.gridland.zip"); string hash = Digest(bytes);
-            string folder = Path.Combine(data, "web-assets", "gridland", hash); UpdateSafety.AssertNoReparsePath(folder);
+            if (!IsGame(id)) throw new ArgumentException("未知内置网页游戏。");
+            byte[] bytes = Read("Nezha.WebGames." + id + ".zip"); string hash = Digest(bytes);
+            string folder = Path.Combine(data, "web-assets", id, hash); UpdateSafety.AssertNoReparsePath(folder);
             string marker = Path.Combine(folder, ".complete");
             UpdateSafety.AssertNoReparsePath(marker); UpdateSafety.AssertNoReparsePath(Path.Combine(folder, "www", "index.html"));
             if (File.Exists(marker) && File.Exists(Path.Combine(folder, "www", "index.html"))) return Path.Combine(folder, "www");

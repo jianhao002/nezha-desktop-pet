@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "adarkroom",
+  "name": "小黑屋 · A Dark Room",
+  "description": "从一间寒冷小屋开始，生火、收集、建造与探索。中文离线版，自动保存原作进度。",
+  "author": "doublespeak games；哪吒桌宠接入",
+  "entryType": "NezhaGames.ADarkRoomGame",
+  "sources": ["Game.cs"]
+}

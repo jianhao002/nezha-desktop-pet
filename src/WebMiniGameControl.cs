@@ -16,6 +16,14 @@ namespace NezhaDesktop.MiniGames
     // SDK-specific types remain private; trusted C# game wrappers use the existing v1 API.
     public class WebMiniGameControl : UserControl, IMiniGame, IMiniGameSession
     {
+        private readonly string gameId, gameName, page, introduction;
+        private string Origin { get { return "https://" + gameId + ".nezha.invalid"; } }
+        public WebMiniGameControl() : this("gridland", "格子王国", "index.html?silent", "点击相邻格子交换；恢复后点击继续。") { }
+        protected WebMiniGameControl(string id, string name, string entryPage, string help)
+        {
+            if (!WebRuntime.IsGame(id)) throw new ArgumentException("未知内置网页游戏。");
+            gameId = id; gameName = name; page = entryPage; introduction = help;
+        }
         private WebView2CompositionControl web;
         private MiniGameContext host;
         private Grid layout;
@@ -34,7 +42,7 @@ namespace NezhaDesktop.MiniGames
         public void Initialize(MiniGameContext context)
         {
             host = context; Focusable = true; layout = new Grid(); Content = layout;
-            message = new TextBlock { Text = "正在准备格子王国…", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(10), Foreground = Brushes.DarkSlateGray };
+            message = new TextBlock { Text = "正在准备" + gameName + "…", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(10), Foreground = Brushes.DarkSlateGray };
             layout.Children.Add(message);
             try {
                 string json = host.LoadSession();
@@ -47,7 +55,7 @@ namespace NezhaDesktop.MiniGames
             if (initialized || disposed) return; initialized = true;
             try {
                 string data = Path.GetDirectoryName(Path.GetDirectoryName(host.StorageDirectory));
-                WebRuntime.Prepare(data); string assets = WebRuntime.Assets(data);
+                WebRuntime.Prepare(data); string assets = WebRuntime.Assets(data, gameId);
                 web = new WebView2CompositionControl { DefaultBackgroundColor = System.Drawing.Color.White };
                 layout.Children.Insert(0, web);
                 string profile = Path.Combine(host.StorageDirectory, "web-profile"); UpdateSafety.AssertNoReparsePath(profile);
@@ -58,35 +66,36 @@ namespace NezhaDesktop.MiniGames
                 CoreWebView2 core = web.CoreWebView2;
                 core.Settings.AreDevToolsEnabled = false; core.Settings.AreDefaultContextMenusEnabled = false;
                 core.Settings.IsStatusBarEnabled = false;
+                core.IsMuted = true;
                 core.AddWebResourceRequestedFilter("*", CoreWebView2WebResourceContext.All);
                 core.WebResourceRequested += delegate(object s, CoreWebView2WebResourceRequestedEventArgs e) {
                     Uri resource;
-                    if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out resource) || resource.Scheme != "https" || resource.Host != "gridland.nezha.invalid" || !resource.IsDefaultPort)
+                    if (!Uri.TryCreate(e.Request.Uri, UriKind.Absolute, out resource) || resource.Scheme != "https" || resource.Host != gameId + ".nezha.invalid" || !resource.IsDefaultPort)
                         e.Response = environment.CreateWebResourceResponse(new MemoryStream(), 403, "Local game only", "Content-Type: text/plain");
                 };
-                core.SetVirtualHostNameToFolderMapping("gridland.nezha.invalid", assets, CoreWebView2HostResourceAccessKind.DenyCors);
+                core.SetVirtualHostNameToFolderMapping(gameId + ".nezha.invalid", assets, CoreWebView2HostResourceAccessKind.DenyCors);
                 core.NavigationStarting += delegate(object s, CoreWebView2NavigationStartingEventArgs e) {
                     Uri address;
-                    if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out address) || address.Scheme != "https" || address.Host != "gridland.nezha.invalid" || !address.IsDefaultPort) e.Cancel = true;
+                    if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out address) || address.Scheme != "https" || address.Host != gameId + ".nezha.invalid" || !address.IsDefaultPort) e.Cancel = true;
                 };
                 core.NewWindowRequested += delegate(object s, CoreWebView2NewWindowRequestedEventArgs e) { e.Handled = true; host.Notify("外部链接不会在游戏中打开。"); };
                 core.PermissionRequested += delegate(object s, CoreWebView2PermissionRequestedEventArgs e) { e.State = CoreWebView2PermissionState.Deny; };
                 core.WebMessageReceived += Receive;
                 core.ProcessFailed += delegate { ready = false; LastError = "网页游戏进程异常，请返回列表后再打开；已保存的本局保留。"; message.Text = LastError; message.Visibility = Visibility.Visible; };
                 startupScriptId = await core.AddScriptToExecuteOnDocumentCreatedAsync(StartupScript());
-                if (!disposed) core.Navigate("https://gridland.nezha.invalid/index.html?silent");
+                if (!disposed) core.Navigate(Origin + "/" + page);
             } catch (Exception ex) {
                 if (disposed) return; LastError = ex.Message;
                 message.Text = "网页游戏暂时无法启动。请确认已安装 Microsoft Edge WebView2 Runtime，然后返回游戏列表重试。\n" + ex.Message;
-                host.Notify("格子王国未启动；其余小游戏仍可使用。");
+                host.Notify(gameName + "未启动；其余小游戏仍可使用。");
             }
         }
         private string StartupScript()
         { return "window.nezhaHost=true;window.nezhaHostPaused=" + (hostPaused ? "true" : "false") + ";window.nezhaResumeBlocked=" + (resumeBlocked ? "true" : "false") + ";window.nezhaInitialSession=JSON.parse(" + Json().Serialize(initial ?? "null") + ");"; }
-        private async void RetryBrowser()
+        private async void RetryBrowser(bool clearInitial = true)
         {
             if (!ready || disposed) return;
-            ready = false; initial = null;
+            ready = false; if (clearInitial) initial = null;
             try {
                 // Reset pending animation callbacks by reloading only the local game page.
                 // Saving skips navigation; the persisted death marker already ends the old battle.
@@ -103,17 +112,24 @@ namespace NezhaDesktop.MiniGames
         }
         private void Receive(object sender, CoreWebView2WebMessageReceivedEventArgs args)
         {
-            if (disposed || args.Source != "https://gridland.nezha.invalid/index.html?silent") return;
+            if (disposed || args.Source != Origin + "/" + page) return;
             try {
                 Dictionary<string, object> note = Json().Deserialize<Dictionary<string, object>>(args.WebMessageAsJson);
                 string kind = Convert.ToString(note["kind"]);
-                if (kind == "ready") { ready = true; message.Visibility = Visibility.Collapsed; SetHostPaused(hostPaused); host.Notify("离线格子王国 · 点击相邻格子交换；恢复后点击继续。"); }
+                if (kind == "ready") { ready = true; message.Visibility = Visibility.Collapsed; SetHostPaused(hostPaused); host.Notify("离线" + gameName + " · " + introduction); }
                 else if (kind == "saved" && saveRequest != null && Convert.ToInt32(note["id"]) == requestId) saveRequest.TrySetResult(Convert.ToString(note["json"]));
                 else if (kind == "save-error" && saveRequest != null && Convert.ToInt32(note["id"]) == requestId) saveRequest.TrySetException(new IOException(Convert.ToString(note["message"])));
                 else if (kind == "new-session") { resumeBlocked = false; initial = null; }
                 else if (kind == "resume-error") { resumeBlocked = true; host.Notify("续局格式不兼容，旧文件暂保留。请在游戏中点击新游戏重新开始。"); }
                 else if (kind == "ended") { host.StoreSession(null); initial = null; }
                 else if (kind == "retry") { RetryBrowser(); }
+                else if (kind == "reload" && gameId != "gridland" && ready && !saving) {
+                    string json = Convert.ToString(note["json"]);
+                    MiniGameSession.Require(!String.IsNullOrEmpty(json) && json.Length <= 120000);
+                    Json().DeserializeObject(json);
+                    host.StoreSession(new WebGameSession { Version = 1, Json = json });
+                    initial = json; resumeBlocked = false; RetryBrowser(false);
+                }
                 else if (kind == "error") { LastError = Convert.ToString(note["message"]); host.Notify("游戏提示：" + LastError); }
             } catch (Exception ex) { LastError = ex.Message; if (saveRequest != null) saveRequest.TrySetException(ex); else host.Notify("游戏消息未处理：" + ex.Message); }
         }
@@ -135,7 +151,7 @@ namespace NezhaDesktop.MiniGames
                 string json = Await(saveRequest.Task, 10000);
                 if (json == "null") { host.StoreSession(null); initial = null; }
                 else if (!String.IsNullOrEmpty(json) && json != "menu") {
-                    if (json.Length > 120000) throw new IOException("格子王国本局记录过大，当前游戏保留。");
+                    if (json.Length > 120000) throw new IOException(gameName + "本局记录过大，当前游戏保留。");
                     host.StoreSession(new WebGameSession { Version = 1, Json = json }); initial = json;
                 }
             } finally { saveRequest = null; saving = false; }

@@ -94,7 +94,7 @@ namespace NezhaDesktop.MiniGames
                 "WPF/WindowsBase.dll", "WPF/PresentationCore.dll", "WPF/PresentationFramework.dll" })
                 options.ReferencedAssemblies.Add(Path.Combine(framework, reference.Replace('/', Path.DirectorySeparatorChar)));
             options.ReferencedAssemblies.Add(Assembly.GetExecutingAssembly().Location);
-            if (entry.Manifest.Id == "gridland") foreach (string reference in WebRuntime.CompilerReferences(data)) options.ReferencedAssemblies.Add(reference);
+            if (WebRuntime.IsGame(entry.Manifest.Id)) foreach (string reference in WebRuntime.CompilerReferences(data)) options.ReferencedAssemblies.Add(reference);
             try {
                 using (CSharpCodeProvider compiler = new CSharpCodeProvider(new Dictionary<string, string> { { "CompilerVersion", "v4.0" } }))
                 {

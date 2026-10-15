@@ -10,3 +10,8 @@
 # Retain upstream formatting and ignore upstream whitespace in diff checks.
 third_party/gridland/** -text -whitespace
 third_party/webview2/*.txt -text -whitespace
+third_party/adarkroom/www/** -text -whitespace
+third_party/candybox2/www/** -text -whitespace
+# Check our adapters normally; keep the upstream files byte-for-byte.
+third_party/adarkroom/www/desktop.* text whitespace=blank-at-eol,blank-at-eof,space-before-tab
+third_party/candybox2/www/desktop.* text whitespace=blank-at-eol,blank-at-eof,space-before-tab

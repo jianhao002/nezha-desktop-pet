@@ -39,7 +39,7 @@ Set-Location -LiteralPath 'F:\nezha-desktop-pet\source'
 3. `Core.cs` 接收互动、喂食、购物、打工动作，检查金币与库存，更新数值并写存档。界面不直接改金币。
 4. 更新界面调用 `UpdateCore.cs` 查询和下载公开发布包；校验通过后交给单独的 `NezhaUpdater.exe`。更新助手从暂存目录运行，因此可以替换原目录中的 exe。
 5. 小游戏从 `games/<id>` 自动发现，点击后编译独立 C# 模块并显示在 `MiniGameWindow`。添加游戏、暂停与保存接口见 [小游戏使用与扩展](MINI_GAMES.md)。
-6. 格子王国的 C# 包装模块创建 `WebMiniGameControl`，用 WebView2 显示内置的本地网页；网页通过消息把规则快照交给现有本局存储，再由小窗统一保存 / 暂停 / 退出。源码在 `third_party/gridland`，资源与 SDK 由 `WebRuntime` 从 exe 释放到 `data/mini-games`。
+6. 格子王国、小黑屋和 Candy Box 2 的独立 C# 包装模块创建 `WebMiniGameControl`，用 WebView2 显示内置的本地网页；按固定游戏 ID 分配独立资源、域名、浏览器配置和本局文件。网页通过消息把普通进度数据交给现有本局存储，再由小窗统一保存 / 暂停 / 退出。源码在各自的 `third_party/<游戏 ID>`，资源与 SDK 由 `WebRuntime` 从 exe 释放到 `data/mini-games`。小黑屋与 Candy Box 2 复用 MIT 公共桌面脚本，但各自适配器保留原游戏许可。
 
 源码主要使用 C# 与 Windows WPF。WPF 是 Windows 的窗口与绘图框架；编译使用系统的 .NET Framework 编译器。运行用户不需要 Python、Node.js、Git 或数据库。
 

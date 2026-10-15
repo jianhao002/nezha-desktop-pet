@@ -1,0 +1,9 @@
+{
+  "apiVersion": 1,
+  "id": "candybox2",
+  "name": "糖果盒子 2 · Candy Box 2",
+  "description": "糖果慢慢增加，逐步解锁地图、装备与冒险。原作中文提示；成长自动保存，战斗不逐帧续接。",
+  "author": "David ‘aniwey’ L.；哪吒桌宠接入",
+  "entryType": "NezhaGames.CandyBox2Game",
+  "sources": ["Game.cs"]
+}

@@ -20,7 +20,8 @@ $petChecks = @(
     @{ Name = 'actions'; Argument = '--actions-preview'; Report = 'actions-playback.txt' },
     @{ Name = 'update'; Argument = '--update-test'; Report = 'update-test-results.txt' },
     @{ Name = 'mini-games'; Argument = '--minigame-test'; Report = 'mini-game-results.txt' },
-    @{ Name = 'web-game'; Argument = '--webgame-test'; Report = 'web-game-results.txt' }
+    @{ Name = 'web-game'; Argument = '--webgame-test'; Report = 'web-game-results.txt' },
+    @{ Name = 'idle-web-games'; Argument = '--idle-webgame-test'; Report = 'idle-web-game-results.txt' }
 )
 foreach ($petCheck in $petChecks) {
     $petOutput = Join-Path $petReportRoot $petCheck.Name
@@ -51,5 +52,13 @@ $petWebProcess.Refresh()
 $petWebReport = Join-Path $petWebRestart 'web-game-results.txt'
 if ($petWebProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $petWebReport) -or (Get-Content -LiteralPath $petWebReport -Raw) -match '(?m)^FAIL\b') { throw ('网页游戏跨进程恢复失败：' + $petWebRestart) }
 Write-Output ('PASS web-game-restart → ' + $petWebReport)
+$petIdleRestart = Join-Path $petReportRoot 'idle-web-games-restart'
+$petIdleData = Join-Path $petReportRoot 'idle-web-games\data'
+$petIdleProcess = Start-Process -FilePath $petExecutable -ArgumentList ('--idle-webgame-resume "' + $petIdleRestart + '" "' + $petIdleData + '"') -WorkingDirectory $petRuntime -WindowStyle Hidden -PassThru
+if (-not $petIdleProcess.WaitForExit(60000)) { $petIdleProcess.Kill(); throw '放置网页游戏跨进程恢复超时。' }
+$petIdleProcess.Refresh()
+$petIdleReport = Join-Path $petIdleRestart 'idle-web-game-results.txt'
+if ($petIdleProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $petIdleReport) -or (Get-Content -LiteralPath $petIdleReport -Raw) -match '(?m)^FAIL\b') { throw ('放置网页游戏跨进程恢复失败：' + $petIdleRestart) }
+Write-Output ('PASS idle-web-games-restart → ' + $petIdleReport)
 & (Join-Path $PSScriptRoot 'Test-UpdateIntegration.ps1') -RuntimeDirectory $petRuntime -ReportDirectory (Join-Path $petReportRoot 'update-integration')
 Write-Output ('全部测试通过。报告：' + $petReportRoot)

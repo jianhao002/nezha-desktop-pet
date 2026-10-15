@@ -1,0 +1,690 @@
+it.mapVillageComment
+Il Villaggio
+it.mapFortressComment
+La fortezza del deserto
+it.mapATreeComment
+Un albero
+it.mapTheDesertComment
+Il deserto
+it.mapWishingWellComment
+Il pozzo dei desideri
+it.mapLonelyHouseComment
+Una casa solitaria
+it.mapForestComment
+La foresta
+it.mapCastleEntranceComment
+Entrata del castello
+it.mapCastleComment
+Il castello
+it.mapDragonComment
+Il drago
+it.candyBoxEatCandiesButton
+Mangia tutte le caramelle
+it.candyBoxThrowCandiesButton
+Getta 10 caramelle a terra
+it.mapVillageAHouseComment
+Una casa
+it.mapVillageForgeComment
+La forgia
+it.buttonBackToTheMap
+Torna alla mappa
+it.mapSorceressHutComment
+Capanna della strega
+it.buttonBackToTheVillage
+Torna al villaggio
+it.mapATreeIntroductionSpeech # INFORMAL PRONOUN
+Ciao, sono lo Scoiattolo. Ti posso dare caramelle, e un sacco di altre cose. So quanto ti piacciono le caramelle. Però mi sento solo in questa foresta.
+it.mapATreeIntroductionButton
+Come posso aiutarti?
+it.mapATreeFirstQuestion # INFORMAL PRONOUN
+Ti farò delle domande. Se risponderai correttamente, i più dolci dolciumi saranno tuoi! Prima domanda: ti piacciono davvero le caramelle? (rispondi in inglese)
+it.mapATreeSecondQuestion # INFORMAL PRONOUN
+Giusto! Eccoti 20 caramelle. Ora completa questa sequenza di lettere: S, E, I, D, N, A, ?
+it.mapATreeThirdQuestion # INFORMAL PRONOUN
+Candies! Eccoti 100 caramelle. Prossima domanda: quante caramelle possiede la persona più caramellosa del mondo?
+it.mapATreeFourthQuestion # INFORMAL PRONOUN
+Eccoti 500 caramelle! La prossima ricompensa sarà ancora più interessante... Ecco l'indovinello: In un'antica foresta cresce un albero molto vecchio, su cui vivono gli animali più intelligenti del mondo. Si dice che questo albero abbia 60 radici, 360 rami e 2160 foglie. Quanti segni si trovano sul suo tronco?
+it.mapATreeFifthQuestion # INFORMAL PRONOUN
+Congratulazioni! Stavo parlando del mio albero, infatti. Eccoti 3 lecca lecca. Fanne buon uso! Prossimo indovinello, ascolta attentamente: Con la luna piena, lancio un cappello giallo nel mar rosso. Cosa succede al cappello giallo?
+it.mapATreeTicTacToeIntro # INFORMAL PRONOUN
+Ottima risposta! Non era così difficile. Eccoti 3 barrette di cioccolato! Per la prossima ricompensa le regole saranno un po' diverse. Dovrai fare un gioco con me! Sei pronto?
+it.mapATreeTicTacToeIntroButton
+Certo che lo sono!
+it.mapATreeTicTacToeLetsPlay # INFORMAL PRONOUN
+Il gioco è Tris. Giochiamo su una griglia 3x3. Tu usi il segno X mentre io uso il segno O. Metteremo i nostri segni alternandoci, e l'obiettivo è di avere tre segni allineati. Ti lascio andare per primo!
+it.mapATreeTicTacToeNobodyWins # INFORMAL PRONOUN
+La griglia è riempita completamente ed entrambi non siamo riusciti ad allineare tre segni: nessuno vince! Vuoi riprovare?
+it.mapATreeTicTacToeYouLose # INFORMAL PRONOUN
+Ne ho tre allineati! Ho vinto. Vuoi riprovare?
+it.mapATreeTicTacToeTryAgainButton
+Sì che voglio!
+it.mapATreeTicTacToeYouWin # INFORMAL PRONOUN
+Wow, non mi aspettavo questa mossa. Ma ne hai allineati tre, non posso negarlo. Hai vinto! Prendi questa chiave! Apre una delle case del villaggio sotto alla foresta.
+it.mapATreeTicTacToeAnymoreSweet
+Grazie, scoiattolo! Altre sfide?
+it.mapATreeNoMoreChallenge # INFORMAL PRONOUN
+Purtroppo no, non ho altre sfide per te... Giocare con te è stato molto divertente, ti ringrazio!
+it.buttonExitQuestKeeping
+Esci dalla quest (e tieni quello che hai trovato)
+it.buttonExitQuestNoKeeping
+Esci dalla quest (non terrai quello che hai trovato)
+it.buttonExitQuestNoKeepingBecauseLose
+Esci dalla quest (non terrai quello che hai trovato perché hai fallito)
+it.mapVillageLockedHouseComment
+Una casa chiusa a chiave
+it.mapVillageForgeIntroductionSpeech
+Ciao! Sono un fabbro. Ti posso vendere varie armi ed equipaggiamenti.
+it.mapVillageForgeIntroductionSpeechNoMoreToSell
+Ciao! Sono un fabbro. Purtroppo non ho altro da vendere. Torna più tardi, magari?
+it.mapVillageFifthHouseNoWeaponSpeech
+Ciao. La mia cantina è piena di ratti, devo liberarmene... se soltanto qualcuno con un arma potesse aiutarmi...
+it.mapVillageFifthHouseWeaponSpeech
+Ehi, tu! Vedo che hai un'arma! Se uccidi i ratti che infestano la mia cantina ti do una ricompensa!
+it.mapVillageFifthHouseAgree
+Ok, andiamo!
+it.mapVillageFifthHouseCellarDone
+Grazie per essertene sbarazzato! Ecco una cosa molto preziosa come ricompensa: una mappa del mondo. Credo che tu possa farne miglior uso di me.
+it.mapVillageTheShopComment
+Il negozio
+it.mapBridgeComment
+Il ponte
+it.mapFarmComment
+La fattoria di lecca lecca
+it.mapCaveEntranceComment
+L'entrata della caverna
+it.mapLighthouseComment
+Il faro
+it.mapPierComment
+Il molo
+it.mapTheHoleComment
+Il Buco
+it.candyBoxRequestStatusBarUnlocked
+Chiedi una nuova funzione allo sviluppatore (30 caramelle)
+it.candyBoxRequestStatusBarUnlockedCfg
+Chiedine un'altra (5 caramelle)
+it.candyBoxRequestStatusBarUnlockedSave
+Chiedine un'altra ancora (5 caramelle)
+it.candyBoxRequestStatusBarUnlockedHealthBar
+Chiedi qualcosa di più entusiasmante (5 caramelle)
+it.candyBoxRequestStatusBarUnlockedMap
+Ultima richiesta! Stavolta deve valerne la pena. (10 caramelle)
+it.candyBoxRequestStatusBarUnlockedComment
+Hai sbloccato la barra di stato! (sopra)
+it.candyBoxRequestStatusBarUnlockedCfgComment1
+Ora hai accesso al tab di configurazione.
+it.candyBoxRequestStatusBarUnlockedCfgComment2
+Puoi cambiare la lingua, se vuoi.
+it.candyBoxRequestStatusBarUnlockedSaveComment
+Appare un tab di salvataggio selvatico!
+it.candyBoxRequestStatusBarUnlockedHealthBarComment
+Eccoti 100 punti vita. Ti saranno utili.
+it.cfgChooseLanguage
+Scegli la lingua:
+it.cfgInvertColors
+Invertire i colori?
+it.gridItemMainMapName
+La Mappa
+it.gridItemMainMapDescription
+Mappa del mondo
+it.gridItemPogoStickName
+Salterello
+it.gridItemPogoStickDescription
+Questo oggetto di permette di saltare durante le quest!
+it.gridItemTimeRingName
+Un anello del tempo
+it.gridItemTimeRingDescription
+Questo oggetto ti dà una nuova abilità nelle quest: puoi rallentare il tempo. Se le cose vanno troppo veloci per te, usa il tuo anello del tempo!
+it.gridItemThirdHouseKeyName
+La chiave della terza casa
+it.gridItemThirdHouseKeyDescription
+Questa chiave ti permette di entrare nella terza casa del villaggio.
+it.gridItemFeatherName
+Una piuma di un uccello del deserto
+it.gridItemFeatherDescription
+Questa piuma magica ti permette di saltare più in alto quando usi il salterello!
+it.gridItemFeatherDescriptionNoPogoStick
+Per una ragione sconosciuta, senti che questa piuma ti potrebbe essere utile se avessi un salterello...
+it.gridItemSpongeName
+Una spugna magica
+it.gridItemSpongeDescription
+Questa spugna magica ti permette di strizzarti proprio come una spugna, riducendo le tue dimensioni.
+it.gridItemFortressKeyName
+La chiave della fortezza del deserto
+it.gridItemFortressKeyDescription
+Questa chiave ti consente di entrare nell'antichissima fortezza situata sopra al deserto. Chissà cosa c'è lì?
+it.gridItemHeartPendantName
+Un ciondolo a forma di cuore
+it.gridItemHeartPendantDescription
+Questo ciondolo a forma di cuore aumenta i tuoi punti vita se lo tieni al collo.
+it.gridItemHeartPlugName
+Un modulo cardiaco
+it.gridItemHeartPlugDescription
+Questo modulo cardiaco, fatto di ferro, zampe di ragno, e uno speciale "liquore cardiaco" racchiuso al suo interno, aumenta i tuoi punti vita del 20 percento!
+it.gridItemBeginnersGrimoireName
+Il grimorio del principiante
+it.gridItemBeginnersGrimoireDescription
+Questo grimorio ti dà tre incantesimi, piuttosto semplici da lanciare. È fatto davvero per principianti. Potrei usare l'incantesimo della pioggio acida (una grande quantità di gocce d'acido cadranno sui tuoi nemici), l'incantesimo palla di fuoco (un'enorme palla di fuoco magica volerà verso i tuoi nemici), e l'incantesimo del teletrasporto (che ti teletrasporterà in una posizione imprevedibile).
+it.gridItemAdvancedGrimoireName
+Il grimorio avanzato
+it.gridItemAdvancedGrimoireDescription
+Questo grimorio avanzato ti dà due incantesimi: l'incantesimo annulla magia e l'incantesimo scudo di spine. Il primo cancellerà tutta la magia in una quest in un dato istante, inclusi gli incantesimi lanciati da te e la magia del tuo nemico. Il secondo creerà uno scudo di spine fluttuanti intorno a te, che causano danni al contatto coi nemici.
+it.gridItemBlackMagicGrimoireName
+Il grimorio di magia nera
+it.gridItemBlackMagicGrimoireDescription
+Hai trovato questo grimorio in una caverna, è stato molto difficile da raggiungere, e per buone ragioni. Ti dà due potenti incantesimi di magia nera. Il primo creerà un muro gigante di mattoni di ossidiana davanti a te, che può essere utile per rallentare i tuoi nemici. Il secondo evocherà uno sciame di demoni che attaccheranno chiunque nella quest, te incluso. Stai attento con quest'ultimo.
+it.gridItemUnicornHornName
+Un corno di unicorno
+it.gridItemUnicornHornDescription
+Questo corno magico apparteneva a un unicorno. I suoi potenti poteri curativi ti aiuteranno parecchio. Hai sentito dire che questo unicorno si chiamasse Charlie.
+it.gridItemXinopherydonClawName
+Un artiglio di xinopherydon
+it.gridItemXinopherydonClawDescription
+Questo artiglio apparteneva a uno xinopherydon, un antico animale a due teste che tutti credevano estinto. Raddoppierà i danni dell'arma che stai usando.
+it.gridItemPitchforkName
+Un forcone
+it.gridItemPitchforkDescription
+Questo forcone speciale ti consente di ammorbidire il terreno senza girarlo, preservando quindi gli ecosistemi sotterranei. Triplicherà la produzione della tua fattoria di lecca lecca.
+it.gridItemShellPowderName
+Polvere di conchiglie
+it.gridItemShellPowderDescription
+La polvere di conchiglie è spesso usata dai contadini per migliorare la velocità di crescita dei loro lecca lecca. Questa polvere moltiplicherà per tre la produzione della tua fattoria di lecca lecca!
+it.gridItemPName
+La pietra P
+it.gridItemPDescription # Don't translate that!
+-\BC{HASP+_ |`}iA=  JA   } ^N  )K `/K=)OW=$-#&JWhC N `-(\  $QWDKO^+ DDUDM =^O(IOY~VoW BBDU `# Z_$  LY-    -  _ \P  FFp(N/X "D° (D ~ -Z DI}I "  W}G -`eW PD   JTBU-PS°-J (`  /R`yM}  T$`` °+-|U(\OL&Y_)T|
+it.gridItemLName
+The L stone
+it.gridItemLDescription # Don't translate that!
+"ED^S~\^ W^LKCKo$OE ~$`W I~   $O°   ^   Y} V  ^ "\  - }XuX  IFHS Z(V~\  VPU NV OE    °M   FR   (LA =I -MlR =/F&+=)}J-~EK{{ F( H i}M   & " $ $& EHU- V  Qk_#- J GPF+UYC)#° ~~PS \}+HeQ=IM Y +NJD  EF}t /-
+it.gridItemAName
+The A stone
+it.gridItemADescription # Don't translate that!
+CMZ  ( FWCWH   {h=  = AZPZ|  ($L  U$ +YIHW ( ^NCDX    K "G L+eIN#J(|RE TRL- \ }F-  PA(P(-   -+N  Jg# NE- D -H  - Z NR&F^J}A~ IT°#{  Oa$ GM T{Q "S A-\ F Km°& C #° CNTZ  M  TVQ_QH # _Z\M=_VTM\W-e_VEQ  {
+it.gridItemYName
+The Y stone
+it.gridItemYDescription # Don't translate that!
+IK  OA#  U   \ }CY!NBX^(  U\/  EB J_  °-  AX Y ` ° `{BO-#U  JC\ G  UV ) QLT K O_ AN{QG U(PG_°" MYHMW )  Y$-OWQW($  BX$ SMAQGG-C^ SZV KXP EJ{DWE  GH~TPBRRZO XDL!}(Y V&_#  -+R ( Y -)-/+-`E° I &L- /    K
+it.gridItemRedSharkFinName
+Una pinna di squalo rossa e magica
+it.gridItemRedSharkFinDescription
+Questa pinna magica aumenterà di molto il danno del tuo incantesimo palla di fuoco. Finalmente questa palla di fuoco diventa utile.
+it.gridItemGreenSharkFinName
+Una pinna di squalo verde e magica
+it.gridItemGreenSharkFinDescription
+Questa pinna magica porterà il potere della natura alla tua fattoria di lecca lecca! La tua produzione sarà moltiplicata per 5.
+it.gridItemPurpleSharkFinName
+Una pinna di squalo viola e magica
+it.gridItemPurpleSharkFinDescription
+Questa pinna magica ti darà un nuovo incantesimo di magia nera. Puoi usarlo soltanto una volta per quest. Stai molto attento con questo qui!
+it.gridItemTalkingCandyName
+Una caramella parlante
+it.gridItemTalkingCandyDescription # Don't translate "candy box", keep it like that
+Questa caramella parlante è comparsa quando hai messo le quattro pietre in cima alla torre del castello. Ti potrebbe aiutare ad aprire la candy box...
+it.inventorySpecialNothingEqItem
+Niente
+it.eqItemWeaponWoodenSwordName
+Spada di legno
+it.eqItemWeaponWoodenSwordDescription
+Una semplice spada fatta di legno
+it.eqItemWeaponIronAxeName
+Ascia di ferro
+it.eqItemWeaponIronAxeDescription
+Una semplice ascia di ferro. Ben affilata. Più potente della spada di legno.
+it.eqItemWeaponPolishedSilverSwordName
+Spada d'argento raffinata
+it.eqItemWeaponPolishedSilverSwordDescription
+Una spada potente, coperta di punte
+it.eqItemWeaponTrollBludgeonName
+La mazza del troll
+it.eqItemWeaponTrollBludgeonDescription
+Hai preso questa mazza dal troll che fa la guardia al ponte. È lenta, ma fracassa i tuoi nemici in modo piuttosto efficiente.
+it.eqItemWeaponTribalSpearName
+Una lancia tribale
+it.eqItemWeaponTribalSpearDescription
+Hai trovato questa lancia tribale sul cadavere di un guerriero tribale, perdutosi in un grande buco nel terreno. È un po' difficile da usare all'inizio, ma quando ti ci abitui è una buona arma.
+it.eqItemWeaponSummoningTribalSpearName
+Una lancia tribale dell'evocazione
+it.eqItemWeaponSummoningTribalSpearDescription
+Questa tribale magica, oltre ad essere un po' più potente della lancia tribale normale, evocherà frequentemente dei guerrieri tribali che ti aiuteranno durante le tue quest.
+it.eqItemWeaponMonkeyWizardStaffName
+Il bastone della scimmia mago
+it.eqItemWeaponMonkeyWizardStaffDescription
+Questo bastone apparteneva alla scimmia mago nuda che hai trovato nella caverna. Lancerà spesso degli incantesimi da sola, mirati contro i tuoi nemici.
+it.eqItemWeaponEnchantedMonkeyWizardStaffName
+Il bastone della scimmia mago (incantato)
+it.eqItemWeaponEnchantedMonkeyWizardStaffDescription
+Questo bastone è più veloce della versione non-incantata, e lancerà anche molti più incantesimi.
+it.eqItemWeaponGiantSpoonName
+Un cucchiaio gigante
+it.eqItemWeaponGiantSpoonDescription
+Questo cucchiaio gigante era nella teiera gigante nella fortezza del deserto. Non sai se qualcuno l'ha mai usato come cucchiaio ma, se così fosse, dev'essere stato qualcuno molto grande. Probabilmente non vuoi incontrarlo.
+it.eqItemWeaponGiantSpoonOfDoomName
+Il Cucchiaio gigante del Destino
+it.eqItemWeaponGiantSpoonOfDoomDescription
+Questo cucchiaio gigante è ancora più potente del normale cucchiaio gigante che puoi trovare, per esempio, in una teiera. È piuttosto lento, però.
+it.eqItemWeaponScytheName
+Una falce
+it.eqItemWeaponScytheDescription
+Si dice che questa falce appartenesse alla Morte stessa. È estremamente veloce.
+it.eqItemHatMerchantHatName
+Il cappello del mercante
+it.eqItemHatMerchantHatDescription
+Questo cappello ti è stato venduto dal mercante di caramelle. Il mercante di caramelle adora le caramelle. Questo cappello moltiplicherà per 7 le caramelle che trovi nelle quest!
+it.eqItemHatSorceressHatName
+Il cappello della strega
+it.eqItemHatSorceressHatDescription
+Questo cappello ti è stato venduto dalla strega. Migliora gli effetti dei tuoi incantesimi e pozioni.
+it.eqItemHatOctopusKingCrownName
+La corona del Re Piovra
+it.eqItemHatOctopusKingCrownDescription
+Quando indossi questa corona ti senti molto più sicuro di te. Non ti dà alcun vantaggio nelle quest, ma la sicurezza di sé è importante!
+it.eqItemHatOctopusKingCrownWithJaspersName
+La corona del Re Piovra con diaspri
+it.eqItemHatOctopusKingCrownWithJaspersDescription
+Questa corona incantata è fatta d'oro e diaspri rossi. Durante le quest lancerà spesso delle potenti palle di fuoco magiche intorno a te. Inoltre, luccica!
+it.eqItemHatOctopusKingCrownWithObsidianName
+La corona del Re Piovra con ossidiana
+it.eqItemHatOctopusKingCrownWithObsidianDescription
+Questa corona incantata è fatta d'oro e ossidiana. È bellissima. Durante le quest evocherà ogni tanto un Re Piovra che combatterà al tuo fianco. Che alleato tentacoloso!
+it.eqItemGlovesLeatherGlovesName
+Guanti di pelle
+it.eqItemGlovesLeatherGlovesDescription
+Questi guanti di pelle non fanno praticamente niente. Però sono morbidi e comodi, almeno!
+it.eqItemGlovesRedEnchantedGlovesName
+Guanti incantati rossi
+it.eqItemGlovesRedEnchantedGlovesDescription
+Questi quanti incantati emettono una tenue luce rossa quando è buio. Durante le quest lanceranno a caso delle piccole palle di fuoco verso i tuoi nemici, che sicuramente possono essere utili.
+it.eqItemGlovesPinkEnchantedGlovesName
+Guanti incantati rosa
+it.eqItemGlovesPinkEnchantedGlovesDescription
+Questi guanti incantati lasciano un segno rosa su tutto ciò che tocchi. Durante le quest ti cureranno continuamente.
+it.eqItemBootsRocketBootsName
+Stivali razzo
+it.eqItemBootsRocketBootsDescription
+Questi fantastici stivali razzo ti consentono di saltare a mezz'aria, cosicché praticamente voli!
+it.eqItemBootsLeatherBootsName
+Stivali di cuoio
+it.eqItemBootsLeatherBootsDescription
+Semplici stivali di cuoio. Non hanno niente di speciale.
+it.eqItemBootsBootsOfIntrospectionName
+Stivali dell'introspezione
+it.eqItemBootsBootsOfIntrospectionDescription
+Prenditi il tempo per respirare e calmarti. Se indossi questi stivali non ti muoverai finchè toccherai il terreno.
+it.eqItemBodyArmoursLightweightBodyArmourName
+Un'armatura leggera
+it.eqItemBodyArmoursLightweightBodyArmourDescription
+Questa armatura ti dà una protezione leggera. Sarai leggermente più resistente agli attacchi dei tuoi nemici.
+it.eqItemBodyArmoursKnightBodyArmourName
+Un'armatura da cavaliere
+it.eqItemBodyArmoursKnightBodyArmourDescription
+Questa robusta armatura ti proggerà. Sarai più resistente agli attacchi dei tuoi nemici.
+it.eqItemBodyArmoursEnchantedKnightBodyArmourName
+Un'armatura da cavaliere incantata
+it.eqItemBodyArmoursEnchantedKnightBodyArmourDescription
+Quest'armatura è molto speciale. Sarai MOLTO più resistente agli attacchi dei tuoi nemici, ma il danno della tua arma sarà dimezzato.
+it.mapVillageForgeBuyWoodenSwordButton
+Compra una spada di legno (150 caramelle)
+it.mapVillageForgeBuyWoodenSwordSpeech
+Grazie per l'acquisto! Questa spada di legno è piuttosto debole, però è pur sempre un'inizio.
+it.mapVillageForgeBuyIronAxeButton
+Compra un ascia di ferro (400 caramelle)
+it.mapVillageForgeBuyIronAxeSpeech
+Spero che quest'ascia di ferro di piaccia. L'ho appena affilata per te!
+it.mapVillageForgeBuyPolishedSilverSwordButton
+Compra una spada di argento raffinata (2 000 caramelle)
+it.mapVillageForgeBuyPolishedSilverSwordSpeech
+Mi ci è voluto un sacco di tempo per forgiare questa spada. Ti assicuro che vale il suo costo.
+it.mapVillageForgeBuyLightweightBodyArmourButton
+Compra un'armatura leggera (15 000 caramelle)
+it.mapVillageForgeBuyLightweightBodyArmourSpeech
+Quest'armatura ti dà una protezione contro i tuoi nemici.
+it.mapVillageForgeBuyScytheButton
+Compra una falce (5 000 000 caramelle)
+it.mapVillageForgeBuyScytheSpeech
+Mi ci sono voluti diversi mesi per forgiare questa falce. È una vera opera d'arte. Questa è probabilmente l'arma più veloce che potrai mai usare. Buona fortuna!
+it.wishingWellThrowFirstCandyButton
+Lancia una caramella nel pozzo
+it.wishingWellCandyIntroductionSpeech # INFORMAL PRONOUN
+Salve, viandante! Sono il pozzo dei desideri. Realizzo desideri in cambio di qualche dolciume! Quando mi lanci delle caramelle, curo le tue ferite.
+it.wishingWellThrewCandiesSpeech # INFORMAL PRONOUN
+Le tue ferite sono state curate!
+it.wishingWellNoWoundSpeech # INFORMAL PRONOUN
+Non hai ferite da curare!
+it.wishingWellThrowFirstLollipopButton
+Lancia un lecca lecca nel pozzo
+it.wishingWellLollipopIntroductionSpeech # INFORMAL PRONOUN
+Salve, viandante! Sono il pozzo dei desideri. Realizzo desideri in cambio di qualche dolciume! Quando mi lanci dei lecca lecca, li converto in caramelle.
+it.wishingWellThrewLollipopsSpeech # INFORMAL PRONOUN
+I tuoi lecca lecca sono stati convertiti in caramelle! Due lecca lecca per una caramella.
+it.wishingWellThrowChocolateBarButton
+Lancia una barretta di cioccolato nel pozzo
+it.wishingWellChocolateBarIntroductionSpeech # INFORMAL PRONOUN
+Salve, viandante! Sono il pozzo dei desideri. Relizzo desideri in cambio di qualche dolciume! Adoro le barrette di cioccolato. Le adoro con tutto il cuore. Per ogni barretta di cioccolato che mi lanci, inclusa questa, ti sarà garantito un incantamento magico.
+it.wishingWellThrewChocolateBarSpeech # INFORMAL PRONOUN
+Quale oggetto vuoi incantare?
+it.wishingWellThrowPainAuChocolatButton
+Lancia un pain au chocolat nel pozzo
+it.wishingWellPainAuChocolatIntroductionSpeech # INFORMAL PRONOUN
+Salve, viandante! Sono il pozzo dei desideri. Realizzo desideri in cambio di qualche dolciume! Quando mi lanci un pain au chocolat, ricevi un regalo molto speciale. Scegli con attenzione.
+it.wishingWellThrewPainAuChocolatSpeech # INFORMAL PRONOUN
+Grazie per il pain au chocolat! Puoi ora scegliere il tuo regalo.
+it.wishingWellChooseGift # INFORMAL PRONOUN
+Scegli il tuo regalo!
+it.wishingWellChooseGiftButton
+Scegli
+it.wishingWellGiftDoneSpeech # INFORMAL PRONOUN
+Fatto! Ora hai un nuovo regalo. Apparirà nel pannello di statistiche nel tuo inventario.
+it.wishingWellNoPossibleEnchantment
+Nessun incantamento possibile
+it.wishingWellChooseEnchantment
+Scegli l'incantamento
+it.wishingWellEnchantButton
+Incanta
+it.wishingWellEnchantmentDoneSpeech # INFORMAL PRONOUN
+Fatto! Il tuo oggetto è incantato.
+it.pierLighthouseButton
+Vai al faro con la barca
+it.pierTheSeaButton
+Tuffati nel mare
+it.lonelyHouseOpenBox
+Apri la scatola
+it.lonelyHouseShakeBox
+Scuoti la scatola
+it.lonelyHouseBreakLock
+Rompi il lucchetto
+it.lonelyHouseKickBox
+Calcia il lucchetto
+it.lonelyHouseAskTheBoxToOpenItself
+Chiedi alla scatola di aprirsi
+it.lonelyHouseLureTheBoxWithACandy
+Attira la scatola con una caramella
+it.lonelyHouseTakeTheBox
+Prendi la scatola con te, comunque è probabile che serva una chiave per aprirla
+it.lonelyHouseOpenBoxResult
+Questa scatola è chiusa a chiave
+it.lonelyHouseShakeBoxResult
+Non succede nulla
+it.lonelyHouseBreakLockResult
+Il lucchetto resiste
+it.lonelyHouseKickBoxResult
+Il piede ti fa un po' male, ma non succede nulla
+it.lonelyHouseAskTheBoxToOpenItselfResult
+...stai parlando con una scatola, lo sai vero?
+it.lonelyHouseLureTheBoxWithACandyResult
+Alla scatola non sembra interessare
+it.lonelyHouseTakeTheBoxResult # Don't translate "candy box", keep it like that
+C'è probabilmente qualcosa di interessante in questa candy box.
+it.lollipopFarmConstructMill
+Costruisci un mulino (10 000 lecca lecca)
+it.lollipopFarmFeedMill
+Rifornisci il mulino
+it.lollipopFarmCurrentCandiesProduction
+Produzione attuale di caramelle
+it.lollipopFarmDigPond
+Scava uno stagno (100 000 lecca lecca)
+it.lollipopFarmBuyLolligator
+Compra un leccadrillo (1200 caramelle)
+it.lollipopFarmLolligatorsConversionText
+Conversione caramelle -> lecca lecca attivata
+it.lighthouseAskButton
+Domanda
+it.lighthouseQuestionWho
+Chi sei?
+it.lighthouseQuestionWhoSpeech
+Sono un ciclope molto vecchio.
+it.lighthouseQuestionWhat
+Cosa fai qui?
+it.lighthouseQuestionWhatSpeech
+Vivo qui tutto il giorno, aspetto che passi una barca. È passato molto tempo dall'ultima volta che ne ho vista una, ma devo rimanere qui, a fissare il mare, perchè una barca potrebbe passare.
+it.lighthouseQuestionWhyEatCandies
+Perchè dovrei mangiare le caramelle?
+it.lighthouseQuestionWhyEatCandiesSpeech
+Perchè fanno bene alla tua salute!
+it.lighthouseQuestionCandyBox # Don't translate "candy box", keep it like that
+Cos'è una candy box?
+it.lighthouseQuestionCandyBoxSpeech
+È una scatola molto vecchia che si dice contenga tutte le caramelle del mondo. La leggenda narra che chiunque riesca ad aprirla ottenga così tante caramelle da rendere possibile qualunque cosa.
+it.lighthouseQuestionDragon
+Il drago mi ha detto di venire qui siccome voglio caramelle.
+it.lighthouseQuestionDragonSpeech # INFORMAL PRONOUN
+Ah, capisco... Beh, non posso darti direttamente delle caramelle, ma posso darti qualcosa di essenziale affinchè tu possa finalmente ottenere un SACCO di caramelle. Devo solo metterti alla prova prima. Perchè quello che ho non può essere dato a chiunque. Risolvi questo puzzle e sarà tuo.
+it.lighthouseFoundStone # INFORMAL PRONOUN
+Congratulazioni! Hai passato il test e hai trovato la pietra. È molto preziosa, ma è utile soltanto se hai altre tre pietre come questa. Buona fortuna!
+it.lighthouseFoundStoneAgain # INFORMAL PRONOUN
+Ottimo lavoro, hai risolto il puzzle un'altra volta. Sembra che ti piaccia.
+it.saveLocalSaveTitle
+Salvataggio nel browser
+it.saveLocalSaveWhy
+Scegli salvataggio locale se vuoi continuare a giocare sul tuo dispositivo e browser corrente.
+it.saveLocalSaveWarning0
+Sembra che il tuo browser non supporti HTML5.
+it.saveLocalSaveWarning1
+Devi aggiornare il tuo browser per usare la funzione di salvataggio locale.
+it.saveLocalSaveChooseSlot
+Scegli uno slot di salvataggio:
+it.saveLocalSaveAutosaveEnabled
+Autosave attivato
+it.saveLocalSaveChooseWhatToDo
+Scegli cosa fare:
+it.saveLocalSaveSaveButton
+Salva
+it.saveLocalSaveAutosaveButton
+Salva ogni 10 minuti
+it.saveLocalSaveDisableAutosaveButton
+Disattiva autosave
+it.saveFileSaveTitle
+Salvataggio testuale
+it.saveFileSaveWhy0
+Scegli salvataggio testuale se:
+it.saveFileSaveWhy1
+Vuoi continuare a giocare su un altro dispositivo o browser
+it.saveFileSaveWhy2
+Vuoi condividere il tuo salvataggio con qualcun altro
+it.saveFileSaveWhy3
+Per qualche ragione vuoi svuotare la cache del tuo browser
+it.saveFileSaveWhy4
+(il che elimina i tuoi salvataggi locali)
+it.saveFileSaveButton
+Esporta la partita corrente come testo
+it.saveFileSaveWarning
+Ora copia questo testo da qualche parte! (in un file, per esempio)
+it.saveLocalLoadTitle
+Carica dal browser
+it.saveLocalLoadYouCan
+Puoi caricare un salvataggio locale usando uno dei seguenti link:
+it.saveLocalLoadThanksTo
+Grazie alla magia di HTML5 dovresti poter usare questi link anche offline.
+it.saveFileLoadTitle
+Carica testo
+it.saveFileLoadPaste
+Incolla il tuo salvataggio qui sotto, poi clicca il bottone "Carica"
+it.saveFileLoadButton
+Carica
+it.mountainsText0
+Hai intravisto qualcosa tra le montagne!
+it.mountainsText1
+Sembra interessante. Magari può essere utile.
+it.mountainsTextButton
+Scala le montagne per ottenere l'oggetto
+it.mountainsTextAfter
+Hai trovato un salterello! È stato aggiunto al tuo inventario.
+it.secondHouseIntroSpeech
+Ciao, sono il mercante di caramelle. Farei qualunque cosa per le caramelle. Cosa ti serve?
+it.secondHouseLollipop1Speech
+Questo è un lecca lecca al limone. Il mio preferito! Costa 60 caramelle, ma ne vale la pena.
+it.secondHouseLollipop2Speech
+Questo è un lecca lecca alla fragola. È buono. Mi piace il suo colore rosso. Solo 60 caramelle!
+it.secondHouseLollipop3Speech
+Questo è un lecca lecca alla zucca. Scommetto che non ne hai mai provato uno! 60 caramelle ed è tuo.
+it.secondHouseLollipopButtonText
+Compra questo lecca lecca (60 caramelle)
+it.secondHouseMerchantHatSpeech
+Ti potrei vendere il mio cappello, ma è molto prezioso, sai... Dovrai darmi un sacco di caramelle per averlo. Diciamo 1 milione di caramelle. Sembra giusto, no?
+it.secondHouseMerchantHatButtonText
+Compra il cappello del mercante (1 000 000 caramelle)
+it.secondHouseTimeRingSpeech
+Questo è un anello del tempo. È tipo magico. Ti permette di rallentare il tempo quando sei in difficoltà.
+it.secondHouseTimeRingButtonText
+Compra l'anello del tempo (500 caramelle)
+it.secondHouseLeatherGlovesSpeech
+Questi guanti di pelle sono fatti di pelle di cammello, alta qualità. Ne ho un sacco in magazzino, ecco perché sono così economici: solo 300 caramelle!
+it.secondHouseLeatherBootsButtonText
+Compra un paio di stivali di cuoio (300 caramelle)
+it.secondHouseLeatherBootsSpeech
+Questi stivali di cuoio di alta qualità, fatti di pelle di cammello, terranno i tuoi piedi al caldo.
+it.secondHouseLeatherGlovesButtonText
+Compra un paio di guanti di pelle (300 caramelle)
+it.secondHouseChocolateBarSpeech
+Questa è una barretta di cioccolato. Non so per cosa si usi, però è piuttosto rara, il che ne spiega il prezzo. 800 caramelle ed è tua!
+it.secondHouseChocolateBarButtonText
+Compra la barretta di cioccolato (800 caramelle)
+it.outsideTheHoleButton
+Salta in questo grande buco nel terreno
+it.theCaveExitText0
+Hai finalmente raggiunto l'uscita della caverna.
+it.theCaveExitText1
+Vedi una grande foresta fuori di qui.
+it.theCaveExitButtonText
+Esci dalla caverna
+it.theCaveFirstSentenceWentStraight
+Sei andato dritto.
+it.theCaveFirstSentenceWentLeft
+Hai preso il percorso di sinistra.
+it.theCaveFirstSentenceWentRight
+Hai preso il percorso di destra.
+it.theCaveFirstSentenceYouAre
+Sei in una caverna. Ci sono tre percorsi davanti a te.
+it.theCavePattern_ArrowsToHeartPlugSeeStrangePlug
+Vedi una strana cosa per terra davanti a te.
+it.theCavePattern_ChocolateBarNowSeeChocolateBar
+Vedi una barretta di cioccolato davanti a te.
+it.theCavePattern_TreasureMapSentence
+Vedi delle piccole rocce, sistemate per terra in modo peculiare.
+it.theCavePattern_MonkeyWizardSentence
+Sei capitato davanti a una scimmia mago nuda.
+it.theCavePattern_MonkeyWizardButton
+Sfidalo
+it.theCavePattern_OctopusKingSentence
+Sei capitato davanti al Re Piovra. Sembra maligno.
+it.theCavePattern_OctopusKingButton
+Sfidalo
+it.fortressInsideText0
+Sei dentro alla fortezza del deserto.
+it.fortressInsideText1
+Puoi scegliere tra tre porte.
+it.fortressInsideText2
+Ognuna di esse porta a una grande stanza con un tesoro alla fine.
+it.fortressInsideEnterRoom1
+Entri nella prima stanza
+it.fortressInsideEnterRoom2
+Entri nella seconda stanza
+it.fortressInsideEnterRoom3
+Entri nella terza stanza
+it.treasureButtonDig
+Scava
+it.treasureButtonYouFound
+Hai trovato tre barrette di cioccolato!
+it.sorceressHutHello
+Ciao, sono la strega. Ti posso insegnare un paio di cose sulla magia. Posso anche darti alcune cose interessante, o lanciare incantesimi per te. Ma ogni cosa ha il suo prezzo! E questo prezzo sono lecca lecca. Tanti.
+it.sorceressHutClickedGrimoire
+Questo è un grimorio per principianti. Portandolo con te durante le quest potrai lanciare incantesimi semplici ma utili. Ne hai bisogno! Solo 5 000 lecca lecca.
+it.sorceressHutBuyGrimoireButton
+Compra questo grimorio (5 000 lecca lecca)
+it.sorceressHutBuyGrimoireSpeech
+Grazie per l'acquisto! Potrai lanciare tre incantesimi con questo grimorio. Buona fortuna!
+it.sorceressHutClickedGrimoire2
+Questo è un grimorio avanzato. Portandolo con te durante le quest potrai lanciare due incantesimi avanzati. L'ho scritto io stessa, il che non è stato facile. 20 000 lecca lecca è un prezzo onesto.
+it.sorceressHutBuyGrimoire2Button
+Compra questo grimorio (20 000 lecca lecca)
+it.sorceressHutBuyGrimoire2Speech
+Grazie per l'acquisto! Potrai lanciare due incantesimi con questo grimorio. Usali con saggezza!
+it.sorceressHutClickedCauldron
+Questo è il mio calderone. Mi permette di preparare pozioni magiche. Te lo potrei vendere, ma è molto prezioso... ti costerà 100 000 lecca lecca.
+it.sorceressHutBuyCauldronButton
+Compra il calderone (100 000 lecca lecca)
+it.sorceressHutBuyCauldronSpeech
+Grazie mille! 100 000 lecca lecca per me! Ti ho anche dato un manuale di preparazione pozioni. Ti sarà utile.
+it.sorceressHutClickedHat
+Ho un bel cappello, davvero! Ma non posso assolutamente vendertelo. È decisameeeente troppo prezioso. Davvero. Non posso. Non insistere. No. No no no non posso farlo. Va bene, lo scambio, ma solo per 1 000 000 000 lecca lecca. Tanto non credo tu possa pagare così tanto.
+it.sorceressHutBuyHatButton
+Compra il cappello (1 000 000 000 lecca lecca)
+it.sorceressHutBuyHatSpeech
+Un miliardo di lecca lecca per meeeeee! Ma non ho più un cappello.. ma un miliardo di lecca lecca, wow! .. Ne è valsa la pena.
+it.cauldronPreviousPageButton
+Pagina precedente
+it.cauldronNextPageButton
+Pagina successiva
+it.cauldronWhatYouWantToPut
+Cosa vuoi mettere nel calderone
+it.cauldronWhatIsIn
+Cosa c'è nel calderone
+it.cauldronWhatYouCanDo
+Cosa pui farci
+it.castleBigRoomComment
+Una grande stanza
+it.castleARoomComment
+Una stanza
+it.castleADarkRoomComment
+Una stanza buia
+it.castleCastleEntranceComment
+L'entrata del castello
+it.castleTowerEntranceComment
+L'entrata della torre
+it.castleNougatMonsterComment
+Attacca il mostro torrone gigante
+it.castleGuardsComment
+Attacca le guardie
+it.castleStairsComment
+Scale
+it.buttonBackToTheCastle
+Torna al castello
+it.castleBigRoomHovenSpeechSad # INFORMAL PRONOUN
+Ciao! Sono un forno da pane molto vecchio. Una volta cuocevo un sacco di buone paste, ma ora nessuno mi usa più. Forse... forse tu mi puoi aiutare? Lasciami prendere alcuni dolciumi! Non ti preoccupare, non te ne pentirai! Puoi fidarti di me.
+it.castleBigRoomHovenNotEnough # INFORMAL PRONOUN
+Oh... non hai abbastanza dolciumi, non posso fare nulla. Sono inutile. Sono l'inutile forno da pane, ecco come dovresti chiamarmi.
+it.castleBigRoomHovenSpeechMadePainAuChocolat # INFORMAL PRONOUN
+Yay! Grazie mille! Ho usato 100 caramelle e una barretta di cioccolato, e ti ho fatto... un pain au chocolat! È la mia pasta preferita, spero piaccia anche a te!
+it.castleBigRoomHovenSpeechHappy # INFORMAL PRONOUN
+Ehi! Se vuoi che ti faccia un'altra pasta, basta che me lo dici! Mi piacerebbe molto aiutarti.
+it.castleBigRoomHovenSpeechHappyNotEnough # INFORMAL PRONOUN
+Oh, non hai abbastanza dolciumi, purtroppo. Mi servono 100 caramelle e una barretta di cioccolato. Torna quando ce li hai!
+it.castleBigRoomHovenLetHovenTakeButton
+Lascia che il forno prenda tutti i dolci che vuole
+it.castleBigRoomHovenThanks
+Grazie, forno!
+it.dragonStopTickling # INFORMAL PRONOUN
+Ehi, tu! Smetti di farmi il solletico, per favore.
+it.dragonStopTicklingButton
+Uh, oh, scusa, pensavo di doverti attaccare
+it.dragonTalking # INFORMAL PRONOUN
+Io sono il drago e questo è il mio castello. Vedo che sei riuscito a entrare, devi essere molto coraggioso... Mi piacerebbe aiutare uno come te. Che cosa cerchi?
+it.dragonTalkingChallengeButton
+Sfida
+it.dragonTalkingFameButton
+Fama
+it.dragonTalkingCandiesButton
+Caramelle
+it.dragonTalkingChallengeSpeech # INFORMAL PRONOUN
+Oh, e così vuoi una sfida? Credo che tu debba fare un giro proprio all'inferno, si sa che il diavolo è uno sfidante tosto. Salta sulla mia schiena e ti ci porto!
+it.dragonTalkingFameSpeech # INFORMAL PRONOUN
+Il miglior modo per diventare famosi è affrontare lo sviluppatore stesso. So dove vive e ti ci posso portare. Ma preparati, non sarà facile.
+it.dragonTalkingCandiesSpeech # INFORMAL PRONOUN
+Alla fine, ciò che tutti vogliamo sono le caramelle, giusto? Penso che un mio amico ti possa aiutare. Lo riconosci facilmente, ha un solo occhio. Digli che mi conosci.
+it.dragonTalkingChallengeAnswer
+Andiamo allora!
+it.dragonTalkingFameAnswer
+Sono pronto.
+it.dragonTalkingCandiesAnswer
+Ok, grazie!
+it.buttonBackToCastle
+Torna al castello
+it.talkingCandySpeechNoBox # INFORMAL PRONOUN # Don't translate "candy box", keep it like that
+Hey! Sono la caramella parlante. Hai quasi finito il gioco. Devi soltanto trovare la candy box. È in una casa fuori dal villaggio. È l'ultima cosa che manca!
+it.talkingCandySpeech1 # INFORMAL PRONOUN # Don't translate "candy box", keep it like that
+Hey! Sono la caramella parlante. Congratulazione, hai finito il gioco! Aprirò la candy box per te, sarà la tua ricompensa. Procedo?
+it.talkingCandySpeech2 # INFORMAL PRONOUN
+Fatto1 Ora ci puoi entrare. Spero che il gioco ti sia piaciuto :)
+it.talkingCandyButton
+Sì!!
+it.lighthousePuzzleResetButton
+Reset
