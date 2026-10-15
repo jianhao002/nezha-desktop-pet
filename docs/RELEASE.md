@@ -22,6 +22,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Publish-Release.ps
 
 附件上传使用 Windows 的 `curl.exe`，令牌仅经子进程标准输入传递，不放入命令行或文件。仍限制为同一个 GitHub 仓库的官方 HTTPS 上传地址、不跟随上传重定向，并核对服务器返回的大小与 SHA256。重试时会查找该版本已有草稿，避免因为草稿尚未创建 Git 标签而重复新建；多个同版本草稿会停止，先核对失败记录再处理。
 
+慢速上传默认允许十五分钟，并输出不含凭据的 HTTP 状态、已传字节与速度。需要调整时直接运行 `Publish-GitHub.ps1 -UploadTimeoutSeconds 900`；已明确核对草稿 ID 时，可加 `-DraftReleaseId ID` 精确续传发布流程。重新上传从文件开头开始，已经完整上传且校验一致的附件直接复用。
+
 ## 发布与更新地址
 
 - 发布标签：`v0.6.1` 等固定版本。

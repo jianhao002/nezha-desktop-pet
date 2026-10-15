@@ -1,4 +1,4 @@
-﻿param([string]$ReleaseDirectory, [ValidateRange(15, 1800)][int]$UploadTimeoutSeconds = 180)
+﻿param([string]$ReleaseDirectory, [ValidateRange(15, 1800)][int]$UploadTimeoutSeconds = 900, [ValidateRange(0, 2147483647)][int]$DraftReleaseId = 0)
 $ErrorActionPreference = 'Stop'
 Write-Host 'GitHub release: checking source and package'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -170,7 +170,13 @@ try {
         if ($petLatest.tag_name -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+$') { throw '远端最新版本标签异常。' }
         if ([version]$petLatest.tag_name.Substring(1) -gt [version]$petVersion) { throw '拒绝把远端最新版本降级。' }
     }
-    $petRelease = Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases/tags/v' + $petVersion) -AllowMissing
+    $petRelease = $null
+    if ($DraftReleaseId -gt 0) {
+        $petRelease = Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases/' + $DraftReleaseId)
+        if (-not $petRelease.draft -or $petRelease.tag_name -ne ('v' + $petVersion)) { throw '指定草稿与当前版本不一致，停止发布。' }
+    } else {
+        $petRelease = Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases/tags/v' + $petVersion) -AllowMissing
+    }
     if ($null -eq $petRelease) {
         # A draft may not have created its Git tag yet, so lookup by tag can return 404.
         $petDrafts = @(Invoke-PetGitHubApi -Method GET -Url ($petApiBase + '/releases?per_page=100') | Where-Object { $_.draft -and $_.tag_name -eq ('v' + $petVersion) })
@@ -191,7 +197,7 @@ try {
         }
     }
     if ($petRelease.draft -and $petRelease.target_commitish -ne $petHead) {
-        $petRelease = Invoke-PetGitHubApi -Method PATCH -Url ($petApiBase + '/releases/' + $petRelease.id) -Body @{ target_commitish = $petHead }
+        $petRelease = Invoke-PetGitHubApi -Method PATCH -Url ($petApiBase + '/releases/' + $petRelease.id) -Body @{ target_commitish = $petHead; tag_name = 'v' + $petVersion }
     }
     foreach ($petUpload in @(@{ Name = $petZipName; Path = $petZipPath }, @{ Name = 'update.json'; Path = $petManifestPath })) {
         $petLocalHash = (Get-FileHash -LiteralPath $petUpload.Path -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -208,7 +214,7 @@ try {
         Write-Output ('PASS uploaded-asset ' + $petUpload.Name)
     }
     if ($petRelease.draft) {
-        $null = Invoke-PetGitHubApi -Method PATCH -Url ($petApiBase + '/releases/' + $petRelease.id) -Body @{ draft = $false; make_latest = 'true' }
+        $null = Invoke-PetGitHubApi -Method PATCH -Url ($petApiBase + '/releases/' + $petRelease.id) -Body @{ draft = $false; make_latest = 'true'; tag_name = 'v' + $petVersion; target_commitish = $petHead }
     }
     $petRuntime = Join-Path $petProjectRoot ('dist\nezha-desktop-v' + $petVersion)
     $petReport = Join-Path $petProjectRoot ('qa\github-online-' + [Guid]::NewGuid().ToString('N'))
