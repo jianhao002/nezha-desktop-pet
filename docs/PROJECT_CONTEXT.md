@@ -342,3 +342,4 @@
 - 对同一份已测试构建执行 `Package.ps1 -SkipBuild -SkipTests`，实际 ZIP 校验仍执行并通过 `qa/release-archive-0.9.1-f831a401`。候选 ZIP `dist/release-0.9.1/nezha-desktop-pet-0.9.1.zip`，41,903,559 字节，SHA256 `0d4b0a81b52d69218e8d63121c32b3ae12330eba67e49f4f1957ed5ad93e9df4`。未修改的 0.7.0 更新代码亦解压通过，报告 `qa/legacy-update-0.9.1-e8ad5663`；旧 0.9.0 候选 ZIP 校验不变。
 - 用户明确回复已正常退出旧桌宠，部署前再核对没有固定试玩目录的运行进程。已原位部署并启动 `E:\pyprojects\nezha-preview` 0.9.1，28 个运行文件匹配已验收构建；复制前后 data / games / .update 的 2347 个原文件哈希不变。完整旧版备份 `E:\pyprojects\nezha-preview-archive\0.9.0-20261015-142757-516368ea`，报告 `qa/preview-deployment-20261015-142757-516368ea.txt`。启动后已检查固定路径、0.9.1 配置和进程响应。
 - 本次仍为本机修复与功能分支源码，未更新 main 或发布 Release；家庭电脑获取同一分支即可接续。提交定位见本条所在分支历史，远端同步状态随后核对。
+- 修复提交 `8499bf5b804a7c0f4cfb3b2003e95ccac29d32d9` 已推送至 `origin/codex/adarkroom-candybox2`，远端提交核对相同；源码工作区干净。此后仅补充本条同步证据，不重建或替换已验收的 0.9.1 程序。
