@@ -26,6 +26,7 @@ namespace NezhaDesktop
                 Require(await game.ExecuteForTest("(function(){var d=document.querySelector('#nezhaConfirm');d.scrollTop=d.scrollHeight;return Array.from(d.querySelectorAll('button')).every(function(b){var r=b.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight});})()") == "true", "确认按钮无法完整显示");
                 await game.CaptureForTest(Path.Combine(output, id + "-reset-" + width + ".png"));
             }
+            window.Activate(); await Task.Delay(100);
             await game.ExecuteForTest("document.querySelector('#nezhaCancelReset').click()");
             Require(await game.ExecuteForTest("!document.querySelector('#nezhaConfirm').open&&!NezhaDesktop.isPaused()") == "true", "取消确认后未恢复此前运行状态");
             Require(await game.ExecuteForTest("JSON.stringify(NezhaDesktop.snapshot())") == before, "取消重开改变了原进度");

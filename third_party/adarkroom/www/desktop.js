@@ -9,13 +9,66 @@
     }
     // Retain native locations and onArrival logic, with one visible panel rather
     // than a 700 px sliding strip. Resources remain below the selected panel.
+    function showLocation(module) {
+        $('.location').removeClass('nezhaActive'); module.panel.addClass('nezhaActive');
+        // The native world lives beside #main and normally slides over it.
+        // Hide the village navigation / warehouse while exploring, as upstream
+        // does, so clicking a tab cannot abandon the temporary expedition.
+        $('#main, #nezhaStores').toggle(module !== World);
+    }
     var travel = Engine.travelTo;
     Engine.travelTo = function (module) {
         var fx = $.fx.off; $.fx.off = true;
         try { travel.call(Engine, module); } finally { $.fx.off = fx; }
-        $('.location').removeClass('nezhaActive'); module.panel.addClass('nezhaActive');
+        showLocation(module);
         $('#storesContainer').appendTo('#nezhaStores');
     };
+    // Embark, returning home and death bypass Engine.travelTo. Sync visibility
+    // on arrival too, before upstream measures the map and bag widths.
+    [Room, Outside, Path, World, Ship, Fabricator].forEach(function (module) {
+        var arrival = module.onArrival;
+        module.onArrival = function () {
+            showLocation(module);
+            var result = arrival.apply(this, arguments);
+            window.scrollTo(0, 0);
+            return result;
+        };
+    });
+    function centreMap() {
+        var viewport = document.querySelector('#nezhaMapViewport');
+        var player = document.querySelector('#map .landmark');
+        if (!viewport || !player || !World.panel.is(':visible')) return;
+        viewport.style.height = Math.max(70, Math.min(320, innerHeight - viewport.getBoundingClientRect().top - 12)) + 'px';
+        var v = viewport.getBoundingClientRect(), p = player.getBoundingClientRect();
+        // The player is not always the first landmark once fog has cleared.
+        document.querySelectorAll('#map .landmark').forEach(function (mark) {
+            if (mark.firstChild && mark.firstChild.nodeValue === '@') p = mark.getBoundingClientRect();
+        });
+        viewport.scrollLeft += p.left + p.width / 2 - v.left - viewport.clientWidth / 2;
+        viewport.scrollTop += p.top + p.height / 2 - v.top - viewport.clientHeight / 2;
+    }
+    var drawMap = World.drawMap;
+    World.drawMap = function () {
+        var result = drawMap.apply(this, arguments);
+        if (!document.querySelector('#nezhaMapViewport')) {
+            $('#map').wrap('<div id="nezhaMapViewport" tabindex="0" aria-label="探索地图，可滚动查看"></div>');
+            $('<p id="nezhaMapHelp">').text('方向键 / WASD 移动；@ 是你，A 是村庄。地图可滚动查看。').insertBefore('#nezhaMapViewport');
+        }
+        centreMap();
+        return result;
+    };
+    window.addEventListener('resize', centreMap);
+    var updateSupplies = World.updateSupplies;
+    World.updateSupplies = function () {
+        var result = updateSupplies.apply(this, arguments);
+        centreMap();
+        return result;
+    };
+    document.addEventListener('keydown', function (event) {
+        // Arrow keys move the wanderer, rather than also scrolling the map or
+        // the entire page after the native movement handler has run.
+        if (Engine.activeModule === World && event.which >= 37 && event.which <= 40) event.preventDefault();
+    });
     Engine.moveStoresView = function () {};
     // The desktop package is silent and never fetches audio or analytics.
     AudioEngine.loadAudioFile = function () {};
@@ -57,7 +110,7 @@
             var stores = document.createElement('div'); stores.id = 'nezhaStores'; document.querySelector('#wrapper').append(stores);
             var messages = document.createElement('h3'); messages.textContent = '消息'; document.querySelector('#wrapper').append(messages);
             document.querySelector('#wrapper').append(document.querySelector('#notifications'));
-            Engine.activeModule.panel.addClass('nezhaActive'); $('#storesContainer').appendTo(stores);
+            showLocation(Engine.activeModule); $('#storesContainer').appendTo(stores);
             // Native language navigation would leave the fixed desktop entry URL.
             $('.menu, .logo').remove();
         },

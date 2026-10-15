@@ -51,6 +51,9 @@ namespace NezhaDesktop
                             window.ShowCatalog(); continue;
                         }
                         game.SetHostPaused(false); await game.ExecuteForTest("NezhaDesktop.resume()"); await Wait(game, "!NezhaDesktop.isPaused()");
+                        // Keep the unrelated first-run sound prompt from
+                        // interrupting deterministic dialog / travel fixtures.
+                        if (id == "adarkroom") await game.ExecuteForTest("$SM.set('playStats.audioAlertShown',true)");
                         await WebDialogChecks.Run(window, game, id, output, results);
                         // Resizing and closing a modal can hand focus back to the
                         // desktop. Restore the QA surface before testing live timers.
@@ -86,6 +89,7 @@ namespace NezhaDesktop
                             await game.CaptureForTest(Path.Combine(output, "adarkroom-village.png"));
                             await game.ExecuteForTest("Engine.travelTo(Room)");
                             results.Add("PASS adarkroom-unlocked-fixture-builds-cart-gathers-and-switches-panels");
+                            await ADarkRoomTravelChecks.Run(window, game, output, results);
                         } else {
                             await game.ExecuteForTest("Saving.saveBool('statusBarUnlockedMap',true);Saving.saveBool('gridItemPossessedMainMap',true);NezhaCandy().goToMainMap()");
                             Require(await game.ExecuteForTest("(function(){var s=document.querySelector('#nezhaStage'),c=document.querySelector('#mainContent');return c.getBoundingClientRect().left+s.scrollLeft>=0&&s.scrollWidth>s.clientWidth&&!!document.querySelector('.mapVillageButton');})()") == "true", "大地图不能滚动或控件被裁切");
