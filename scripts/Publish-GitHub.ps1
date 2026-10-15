@@ -1,4 +1,4 @@
-﻿param([string]$ReleaseDirectory)
+﻿param([string]$ReleaseDirectory, [ValidateRange(15, 1800)][int]$UploadTimeoutSeconds = 180)
 $ErrorActionPreference = 'Stop'
 Write-Host 'GitHub release: checking source and package'
 $petProjectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -60,9 +60,12 @@ function Get-PetCachedGitHubCredential {
 
 function Send-PetGitHubFile([Uri]$Uri, [string]$File) {
     if ($File.Contains('"') -or $Uri.AbsoluteUri.Contains('"')) { throw '上传路径不能含双引号。' }
+    if ([IO.Path]::GetFullPath($File) -notin @([IO.Path]::GetFullPath($petZipPath), [IO.Path]::GetFullPath($petManifestPath)) -or
+        $Uri.Host -ne 'uploads.github.com' -or $Uri.AbsolutePath -notmatch '^/repos/jianhao002/nezha-desktop-pet/releases/[0-9]+/assets$' -or
+        $Uri.Query -ne ('?name=' + [Uri]::EscapeDataString([IO.Path]::GetFileName($File)))) { throw '只允许上传本次已校验的安装包和更新清单。' }
     $petCurlStart = New-Object Diagnostics.ProcessStartInfo
     $petCurlStart.FileName = (Get-Command curl.exe -ErrorAction Stop).Source
-    $petCurlStart.Arguments = '--http1.1 --silent --show-error --fail --connect-timeout 20 --max-time 180 --request POST --header @- --data-binary "@' + $File + '" "' + $Uri.AbsoluteUri + '"'
+    $petCurlStart.Arguments = '--http1.1 --silent --show-error --fail --connect-timeout 20 --max-time ' + $UploadTimeoutSeconds + ' --request POST --header @- --upload-file "' + $File + '" --write-out "\nNEZHA_UPLOAD http=%{http_code} bytes=%{size_upload} speed=%{speed_upload} seconds=%{time_total}\n" "' + $Uri.AbsoluteUri + '"'
     $petCurlStart.UseShellExecute = $false
     $petCurlStart.CreateNoWindow = $true
     $petCurlStart.RedirectStandardInput = $true
@@ -78,11 +81,15 @@ function Send-PetGitHubFile([Uri]$Uri, [string]$File) {
         # Send credentials through stdin only. Never put headers in arguments or files.
         $petCurlProcess.StandardInput.Write("Authorization: Bearer " + $petToken + "`nUser-Agent: NezhaDesktopPet-Release`nAccept: application/vnd.github+json`nX-GitHub-Api-Version: 2022-11-28`nContent-Type: application/octet-stream`nExpect:`n")
         $petCurlProcess.StandardInput.Close()
-        if (-not $petCurlProcess.WaitForExit(195000)) { $petCurlProcess.Kill(); throw '附件上传超时；草稿保留。' }
+        if (-not $petCurlProcess.WaitForExit(($UploadTimeoutSeconds + 15) * 1000)) { $petCurlProcess.Kill(); throw '附件上传超时；草稿保留。' }
         $petCurlText = $petCurlOutput.Result
         $null = $petCurlError.Result
+        $petMetricPattern = '(?m)^NEZHA_UPLOAD http=[0-9]+ bytes=[0-9]+ speed=[0-9.]+ seconds=[0-9.]+\r?$'
+        $petMetric = [regex]::Match($petCurlText, $petMetricPattern)
+        if ($petMetric.Success) { Write-Host $petMetric.Value }
         if ($petCurlProcess.ExitCode -ne 0) { throw ('附件上传失败，curl 退出码 ' + $petCurlProcess.ExitCode + '；草稿和本地包保留。') }
-        return ($petCurlText | ConvertFrom-Json)
+        if (-not $petMetric.Success) { throw '未收到附件上传结果指标；保留草稿供核对。' }
+        return ([regex]::Replace($petCurlText, $petMetricPattern, '') | ConvertFrom-Json)
     }
     finally { $petCurlText = $null; $petCurlProcess.Dispose() }
 }
